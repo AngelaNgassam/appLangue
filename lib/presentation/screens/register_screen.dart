@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../../data/repositories/auth_repository.dart';
+import 'verify_otp_screen.dart'; // <-- import ici
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -31,8 +32,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       final message = await _repo.registerUser(_data);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message ?? 'Registration successful')),
+      );
+
+      // ✅ Redirection vers verify OTP
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => VerifyOtpScreen(email: _data['email']!),
+        ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context)

@@ -1,90 +1,101 @@
-import 'dart:convert';
+// lib/presentation/screens/verify_otp_screen.dart
+
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../data/repositories/auth_repository.dart';
+import 'dashboard_screen.dart'; // ton écran d'accueil après OTP
 
 class VerifyOtpScreen extends StatefulWidget {
-  final String email; // email reçu depuis l'écran d'inscription
+  final String email;
 
-  const VerifyOtpScreen({Key? key, required this.email}) : super(key: key);
+  const VerifyOtpScreen({super.key, required this.email});
 
   @override
-  _VerifyOtpScreenState createState() => _VerifyOtpScreenState();
+  State<VerifyOtpScreen> createState() => _VerifyOtpScreenState();
 }
 
 class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
-  final TextEditingController _otpController = TextEditingController();
-  bool _isLoading = false;
-  final String apiUrl = 'http://localhost:3000/auth/verify-otp';
+  final _repo = AuthRepository();
+  final _otpController = TextEditingController();
+  bool _loading = false;
 
   Future<void> _verifyOtp() async {
-    setState(() => _isLoading = true);
+    final otp = _otpController.text.trim();
+
+    if (otp.length != 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter a 6-digit OTP")),
+      );
+      return;
+    }
+
+    setState(() => _loading = true);
 
     try {
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': widget.email,
-          'otp': _otpController.text.trim(),
-        }),
-      );
+      // Appel à ton backend Laravel pour vérifier le code
+      final message = await _repo.verifyOtp(widget.email, otp);
 
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        // ✅ Si le backend renvoie un token JWT, on le sauvegarde
-        if (data['token'] != null) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('token', data['token']);
-        }
-
-        // ✅ Redirection vers le Dashboard
-        Navigator.pushReplacementNamed(context, '/dashboard');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'Invalid OTP')),
-        );
-      }
-    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur de connexion : $e')),
+        SnackBar(content: Text(message ?? 'OTP verified successfully!')),
       );
+
+      // ✅ Rediriger vers le dashboard
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
-      setState(() => _isLoading = false);
+      setState(() => _loading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _otpController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Vérification du code OTP')),
+      appBar: AppBar(title: const Text("Verify OTP")),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            const SizedBox(height: 40),
             Text(
-              'Un code a été envoyé à ${widget.email}',
+              "A 6-digit code has been sent to your email.",
+              style: TextStyle(color: Colors.grey[700]),
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 40),
+
+            // Email caché (non visible, mais disponible)
+            Offstage(
+              offstage: true,
+              child: Text(widget.email),
+            ),
+
             TextField(
               controller: _otpController,
               keyboardType: TextInputType.number,
               maxLength: 6,
               decoration: const InputDecoration(
-                labelText: 'Code OTP',
+                labelText: "Enter OTP",
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 20),
+
             ElevatedButton(
-              onPressed: _isLoading ? null : _verifyOtp,
-              child: _isLoading
+              onPressed: _loading ? null : _verifyOtp,
+              child: _loading
                   ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('Valider'),
+                  : const Text("Next"),
             ),
           ],
         ),
