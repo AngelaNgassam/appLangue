@@ -1,89 +1,160 @@
+// lib/presentation/screens/login_screen.dart
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../data/repositories/auth_repository.dart';
+import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  bool _isLoading = false;
-  final String apiUrl = 'http://localhost:3000/auth/login';
+  final _formKey = GlobalKey<FormState>();
+  final _repo = AuthRepository();
+
+  String _email = '';
+  String _password = '';
+  bool _loading = false;
+  bool _obscurePassword = true;
 
   Future<void> _login() async {
-    setState(() => _isLoading = true);
+    if (!_formKey.currentState!.validate()) return;
+    _formKey.currentState!.save();
+
+    setState(() => _loading = true);
 
     try {
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': _emailController.text.trim(),
-          'password': _passwordController.text.trim(),
-        }),
-      );
+      // ✅ Cette ligne devrait maintenant réussir car AuthRepository accepte le statut 201
+      final response = await _repo.loginUser(_email, _password); 
 
-      final data = jsonDecode(response.body);
+      final token = response['token'];
+      // Utilisation d'un message par défaut clair pour l'utilisateur
+      final message = response['message'] ?? 'Connexion réussie !'; 
 
-      if (response.statusCode == 200 && data['token'] != null) {
+      if (token != null) {
+        // Sauvegarde du token localement
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', data['token']);
+        await prefs.setString('jwt_token', token);
 
-        Navigator.pushReplacementNamed(context, '/dashboard');
+        // Message de succès
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(message)));
+
+        // Redirection vers le tableau de bord
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'Identifiants invalides')),
+          const SnackBar(content: Text('Échec de la connexion : token manquant')),
         );
       }
     } catch (e) {
+      // 🛠️ Amélioration : Nettoyer le message d'erreur en supprimant le préfixe "Exception: "
+      String errorMessage = e.toString();
+      if (errorMessage.startsWith("Exception: ")) {
+          errorMessage = errorMessage.replaceFirst("Exception: ", "");
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur de connexion : $e')),
+        SnackBar(content: Text(errorMessage)),
       );
     } finally {
-      setState(() => _isLoading = false);
+      setState(() => _loading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Connexion')),
+      appBar: AppBar(title: const Text("Se connecter")),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              const SizedBox(height: 40),
+              const Text(
+                "Bienvenue 👋",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Mot de passe',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 10),
+              const Text(
+                "Connectez-vous pour continuer",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
               ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _login,
-              child: _isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('Se connecter'),
-            ),
-          ],
+              const SizedBox(height: 40),
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                onSaved: (v) => _email = v ?? '',
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Veuillez entrer votre email' : null,
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                decoration: InputDecoration(
+                  labelText: 'Mot de passe',
+                  border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
+                ),
+                obscureText: _obscurePassword,
+                onSaved: (v) => _password = v ?? '',
+                validator: (v) => v == null || v.isEmpty
+                    ? 'Veuillez entrer votre mot de passe'
+                    : null,
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: _loading ? null : _login,
+                child: _loading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Se connecter'),
+              ),
+              const SizedBox(height: 20),
+              // lien d'inscription
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("Pas encore de compte ? "),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/register');
+                    },
+                    child: const Text(
+                      "S'inscrire",
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

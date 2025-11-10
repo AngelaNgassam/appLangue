@@ -21,6 +21,7 @@ class AuthRepository {
     }
   }
 
+  // ✅ MODIFICATION APPLIQUÉE ICI
   Future<Map<String, dynamic>> loginUser(String email, String password) async {
     final response = await http.post(
       Uri.parse(ApiEndpoints.login),
@@ -28,13 +29,17 @@ class AuthRepository {
       body: jsonEncode({'email': email, 'password': password}),
     );
 
-    if (response.statusCode == 200) {
+    // Changement : Accepter 201 Created (statut par défaut du backend NestJS pour POST)
+    if (response.statusCode == 200 || response.statusCode == 201) {
       final data = jsonDecode(response.body);
       return {
+        // Le backend renvoie 'access_token', nous le mappons sur la clé 'token' utilisée dans LoginScreen.
         'token': data['access_token'],
-        'user': UserModel.fromJson(data['user']),
+        // Nous conservons également l'objet utilisateur.
+        'user': UserModel.fromJson(data['user']), 
       };
     } else {
+      // Les exceptions ne seront plus levées pour les connexions réussies (statut 201).
       throw Exception('Login failed: ${response.body}');
     }
   }

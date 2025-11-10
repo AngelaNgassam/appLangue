@@ -1,5 +1,6 @@
 // lib/presentation/screens/register_screen.dart
 
+import 'package:applangue/presentation/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import '../../data/repositories/auth_repository.dart';
 import 'verify_otp_screen.dart'; // <-- import ici
@@ -84,11 +85,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 onSaved: (v) => _data['password'] = v ?? '',
               ),
               const SizedBox(height: 20),
+              
               ElevatedButton(
                 onPressed: _loading ? null : _register,
                 child: _loading
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text('Register'),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("Vous avez déjà un compte ? "),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const LoginScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      "Se connecter",
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

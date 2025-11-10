@@ -23,7 +23,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
 
     if (otp.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter a 6-digit OTP")),
+        const SnackBar(content: Text("Entrez votre code OTP à 6 chiffres.")),
       );
       return;
     }
@@ -60,7 +60,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Verify OTP")),
+      appBar: AppBar(title: const Text("Verification de l'OTP")),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -68,7 +68,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
           children: [
             const SizedBox(height: 40),
             Text(
-              "A 6-digit code has been sent to your email.",
+              "Un code de 6 chiffres vous a ete envoyé par email.",
               style: TextStyle(color: Colors.grey[700]),
               textAlign: TextAlign.center,
             ),
