@@ -1,8 +1,6 @@
-// lib/presentation/screens/verify_otp_screen.dart
-
 import 'package:flutter/material.dart';
 import '../../data/repositories/auth_repository.dart';
-import 'dashboard_screen.dart'; // ton écran d'accueil après OTP
+import 'login_screen.dart';
 
 class VerifyOtpScreen extends StatefulWidget {
   final String email;
@@ -23,7 +21,9 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
 
     if (otp.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Entrez votre code OTP à 6 chiffres.")),
+        const SnackBar(
+          content: Text("Veuillez entrer un code OTP à 6 chiffres."),
+        ),
       );
       return;
     }
@@ -31,21 +31,34 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     setState(() => _loading = true);
 
     try {
-      // Appel à ton backend Laravel pour vérifier le code
       final message = await _repo.verifyOtp(widget.email, otp);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message ?? 'OTP verified successfully!')),
-      );
+      if (message != null &&
+          message.contains("Account verified successfully")) {
+        // ✅ Succès
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Compte vérifié avec succès !")),
+        );
 
-      // ✅ Rediriger vers le dashboard
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
-      );
+        // ✅ Redirection vers la page de connexion
+        await Future.delayed(
+          const Duration(seconds: 1),
+        ); // petite pause esthétique
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      } else {
+        // ⚠️ Message inattendu
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message ?? "Erreur de vérification")),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.toString())));
+      // ❌ Gestion propre des erreurs
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Erreur : ${e.toString()}")));
     } finally {
       setState(() => _loading = false);
     }
@@ -60,44 +73,58 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Verification de l'OTP")),
+      appBar: AppBar(title: const Text("Vérification de l'OTP")),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 40),
-            Text(
-              "Un code de 6 chiffres vous a ete envoyé par email.",
-              style: TextStyle(color: Colors.grey[700]),
-              textAlign: TextAlign.center,
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 20),
+                const Icon(
+                  Icons.lock_open_rounded,
+                  size: 80,
+                  color: Colors.blueAccent,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  "Un code à 6 chiffres vous a été envoyé à l'adresse :",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.email,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 30),
+                TextField(
+                  controller: _otpController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  decoration: const InputDecoration(
+                    labelText: "Entrez le code OTP",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _loading ? null : _verifyOtp,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    backgroundColor: Colors.blueAccent,
+                  ),
+                  child: _loading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text("Vérifier"),
+                ),
+              ],
             ),
-            const SizedBox(height: 40),
-
-            // Email caché (non visible, mais disponible)
-            Offstage(
-              offstage: true,
-              child: Text(widget.email),
-            ),
-
-            TextField(
-              controller: _otpController,
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-              decoration: const InputDecoration(
-                labelText: "Enter OTP",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            ElevatedButton(
-              onPressed: _loading ? null : _verifyOtp,
-              child: _loading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text("Next"),
-            ),
-          ],
+          ),
         ),
       ),
     );

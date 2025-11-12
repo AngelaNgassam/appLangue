@@ -35,7 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final message = await _repo.registerUser(_data);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message ?? 'Registration successful')),
+        SnackBar(content: Text(message ?? 'Inscription réussie !')),
       );
 
       // ✅ Redirection vers verify OTP
@@ -46,11 +46,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.toString())));
+      // Formattage clair des erreurs
+      String errorMessage = 'Une erreur est survenue.';
+
+      if (e is String) {
+        errorMessage = e;
+      } else if (e.toString().isNotEmpty) {
+        errorMessage = e.toString();
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
     } finally {
       setState(() => _loading = false);
     }
+  }
+
+  String? _validateNotEmpty(String? value, String fieldName) {
+    if (value == null || value.trim().isEmpty) {
+      return '$fieldName ne peut pas être vide';
+    }
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Email ne peut pas être vide';
+    final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!regex.hasMatch(value)) return 'Email invalide';
+    return null;
+  }
+
+  String? _validatePhone(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Téléphone ne peut pas être vide';
+    final regex = RegExp(r'^\+?[0-9]{7,15}$');
+    if (!regex.hasMatch(value)) return 'Numéro de téléphone invalide';
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Mot de passe ne peut pas être vide';
+    if (value.length < 6) return 'Le mot de passe doit contenir au moins 6 caractères';
+    return null;
   }
 
   @override
@@ -65,33 +102,44 @@ class _RegisterScreenState extends State<RegisterScreen> {
             children: [
               TextFormField(
                 decoration: const InputDecoration(labelText: 'First Name'),
-                onSaved: (v) => _data['firstName'] = v ?? '',
+                validator: (v) => _validateNotEmpty(v, 'Prénom'),
+                onSaved: (v) => _data['firstName'] = v!.trim(),
               ),
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Last Name'),
-                onSaved: (v) => _data['lastName'] = v ?? '',
+                validator: (v) => _validateNotEmpty(v, 'Nom'),
+                onSaved: (v) => _data['lastName'] = v!.trim(),
               ),
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Email'),
-                onSaved: (v) => _data['email'] = v ?? '',
+                keyboardType: TextInputType.emailAddress,
+                validator: _validateEmail,
+                onSaved: (v) => _data['email'] = v!.trim(),
               ),
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Phone'),
-                onSaved: (v) => _data['phone'] = v ?? '',
+                keyboardType: TextInputType.phone,
+                validator: _validatePhone,
+                onSaved: (v) => _data['phone'] = v!.trim(),
               ),
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Password'),
                 obscureText: true,
-                onSaved: (v) => _data['password'] = v ?? '',
+                validator: _validatePassword,
+                onSaved: (v) => _data['password'] = v!.trim(),
               ),
               const SizedBox(height: 20),
-              
               ElevatedButton(
                 onPressed: _loading ? null : _register,
                 child: _loading
-                    ? const CircularProgressIndicator(color: Colors.white)
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
                     : const Text('Register'),
               ),
+              const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -100,9 +148,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => const LoginScreen(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
                       );
                     },
                     child: const Text(

@@ -5,7 +5,16 @@ import 'package:http/http.dart' as http;
 import '../../core/constants/api_endpoints.dart';
 import '../models/user_model.dart';
 
+/// Modèle de réponse pour la connexion
+class AuthResponse {
+  final String token;
+  final UserModel user;
+
+  AuthResponse({required this.token, required this.user});
+}
+
 class AuthRepository {
+  /// Enregistrement utilisateur
   Future<String?> registerUser(Map<String, dynamic> data) async {
     final response = await http.post(
       Uri.parse(ApiEndpoints.register),
@@ -21,29 +30,25 @@ class AuthRepository {
     }
   }
 
-  // ✅ MODIFICATION APPLIQUÉE ICI
-  Future<Map<String, dynamic>> loginUser(String email, String password) async {
+  /// Connexion utilisateur
+  Future<AuthResponse> loginUser(String email, String password) async {
     final response = await http.post(
       Uri.parse(ApiEndpoints.login),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'email': email, 'password': password}),
     );
 
-    // Changement : Accepter 201 Created (statut par défaut du backend NestJS pour POST)
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = jsonDecode(response.body);
-      return {
-        // Le backend renvoie 'access_token', nous le mappons sur la clé 'token' utilisée dans LoginScreen.
-        'token': data['access_token'],
-        // Nous conservons également l'objet utilisateur.
-        'user': UserModel.fromJson(data['user']), 
-      };
+      final token = data['access_token'];
+      final user = UserModel.fromJson(data['user']);
+      return AuthResponse(token: token, user: user);
     } else {
-      // Les exceptions ne seront plus levées pour les connexions réussies (statut 201).
       throw Exception('Login failed: ${response.body}');
     }
   }
 
+  /// Vérification OTP
   Future<String?> verifyOtp(String email, String otp) async {
     final response = await http.post(
       Uri.parse(ApiEndpoints.verifyOtp),

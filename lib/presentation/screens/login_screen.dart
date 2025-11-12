@@ -1,10 +1,10 @@
-// lib/presentation/screens/login_screen.dart
+// lib/screens/login_screen.dart
 
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/repositories/auth_repository.dart';
 import 'dashboard_screen.dart';
+import 'language_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -29,51 +29,96 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _loading = true);
 
     try {
-      // ✅ Cette ligne devrait maintenant réussir car AuthRepository accepte le statut 201
-      final response = await _repo.loginUser(_email, _password); 
+      print('🔐 Tentative de connexion pour : $_email');
+      
+      // Login avec le repository
+      final authResponse = await _repo.loginUser(_email, _password);
 
-      final token = response['token'];
-      // Utilisation d'un message par défaut clair pour l'utilisateur
-      final message = response['message'] ?? 'Connexion réussie !'; 
+      final token = authResponse.token;
+      final user = authResponse.user;
 
-      if (token != null) {
-        // Sauvegarde du token localement
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('jwt_token', token);
+      print('✅ Connexion réussie pour : ${user.email}');
+      print('🔑 Token reçu : ${token.substring(0, 20)}...');
+      print('👤 Rôle : ${user.role}');
 
-        // Message de succès
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(message)));
+      // Stockage local du token et infos utilisateur
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('jwt_token', token);
+      await prefs.setString('user_role', user.role);
+      await prefs.setString('user_id', user.id);
 
-        // Redirection vers le tableau de bord
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const DashboardScreen()),
-        );
-      } else {
+      print('💾 Token sauvegardé dans SharedPreferences');
+
+      // ✅ Vérification : Relire le token pour confirmer
+      final savedToken = prefs.getString('jwt_token');
+      print('🔍 Token relu : ${savedToken?.substring(0, 20)}...');
+
+      // Affiche un message de succès
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Échec de la connexion : token manquant')),
+          const SnackBar(content: Text('Connexion réussie !')),
         );
+      }
+
+      // Redirection selon rôle
+      final role = user.role.toUpperCase();
+
+      if (role == 'USER') {
+        print('🚀 Redirection vers LanguageScreen');
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => LanguageScreen(
+                userId: user.id,
+                token: token, // ✅ Passez le token directement
+              ),
+            ),
+          );
+        }
+      } else if (role == 'ADMIN') {
+        print('🚀 Redirection vers DashboardScreen');
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          );
+        }
+      } else {
+        print('❌ Rôle inconnu : $role');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Rôle inconnu, accès refusé')),
+          );
+        }
       }
     } catch (e) {
-      // 🛠️ Amélioration : Nettoyer le message d'erreur en supprimant le préfixe "Exception: "
+      print('❌ Erreur de connexion : $e');
+      
       String errorMessage = e.toString();
-      if (errorMessage.startsWith("Exception: ")) {
-          errorMessage = errorMessage.replaceFirst("Exception: ", "");
+      if (errorMessage.startsWith('Exception: ')) {
+        errorMessage = errorMessage.replaceFirst('Exception: ', '');
       }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
-      );
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
-      setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Se connecter")),
+      appBar: AppBar(title: const Text('Se connecter')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -82,13 +127,13 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const SizedBox(height: 40),
               const Text(
-                "Bienvenue 👋",
+                'Bienvenue 👋',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
               const Text(
-                "Connectez-vous pour continuer",
+                'Connectez-vous pour continuer',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey),
               ),
@@ -97,6 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Email',
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.email),
                 ),
                 keyboardType: TextInputType.emailAddress,
                 onSaved: (v) => _email = v ?? '',
@@ -108,14 +154,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: InputDecoration(
                   labelText: 'Mot de passe',
                   border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.lock),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword ? Icons.visibility_off : Icons.visibility,
                     ),
                     onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
+                      setState(() => _obscurePassword = !_obscurePassword);
                     },
                   ),
                 ),
@@ -126,18 +171,38 @@ class _LoginScreenState extends State<LoginScreen> {
                     : null,
               ),
               const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: _loading ? null : _login,
-                child: _loading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Se connecter'),
+              SizedBox(
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _loading ? null : _login,
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: _loading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Se connecter',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
               ),
               const SizedBox(height: 20),
-              // lien d'inscription
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("Pas encore de compte ? "),
+                  const Text('Pas encore de compte ? '),
                   GestureDetector(
                     onTap: () {
                       Navigator.pushNamed(context, '/register');
