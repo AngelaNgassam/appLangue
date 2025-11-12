@@ -101,7 +101,7 @@ class ApiService {
   Future<List<ReferralSource>> fetchReferralSources() async {
     final res = await http.get(
       Uri.parse('$baseUrl/referralsources'),
-      headers: await _getHeaders(includeToken: false),
+      headers: await _getHeaders(includeToken: true),
     );
 
     if (res.statusCode == 200) {
@@ -147,24 +147,24 @@ class ApiService {
 
   /// 🔹 Crée une préférence utilisateur - PROTÉGÉ
   Future<bool> createUserPreference(
-    String userId,
-    String languageId,
-    String goalId,
-    String sourceId,
-  ) async {
-    final res = await http.post(
-      Uri.parse('$baseUrl/user-preferences/create'),
-      headers: await _getHeaders(),
-      body: json.encode({
-        "userId": userId,
-        "targetLanguageId": languageId,
-        "goalId": goalId,
-        "referralSourceId": sourceId,
-      }),
-    );
+  String userId,
+  String languageId, {
+  String? goalId,
+  String? referralSourceId,
+}) async {
+  final res = await http.post(
+    Uri.parse('$baseUrl/user-preferences/create'),
+    headers: await _getHeaders(),
+    body: json.encode({
+      "userId": userId,
+      "targetLanguageId": languageId,
+      if (goalId != null) "goalId": goalId,
+      if (referralSourceId != null) "referralSourceId": referralSourceId,
+    }),
+  );
 
-    return res.statusCode == 201 || res.statusCode == 200;
-  }
+  return res.statusCode == 201 || res.statusCode == 200;
+}
 
   /// 🔹 Met à jour une préférence utilisateur - PROTÉGÉ
   Future<bool> updateUserPreference(

@@ -29,27 +29,24 @@ class _LanguageScreenState extends State<LanguageScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeAndLoadLanguages(); // ✅ Changement ici
+    _initializeAndLoadLanguages(); // ✅ Sauvegarde token + charge langues
   }
 
-  // ✅ Nouvelle méthode : Sauvegarde le token PUIS charge les langues
+  /// 🔹 Sauvegarde le token puis charge les langues
   Future<void> _initializeAndLoadLanguages() async {
     print('🔄 Initialisation de LanguageScreen');
     
-    // ✅ S'assurer que le token est bien sauvegardé
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('jwt_token', widget.token);
-    
-    print('💾 Token sauvegardé dans LanguageScreen : ${widget.token.substring(0, 20)}...');
-    
-    // ✅ Vérification : Relire le token
+    print('💾 Token sauvegardé : ${widget.token.substring(0, 20)}...');
+
     final savedToken = prefs.getString('jwt_token');
     print('🔍 Token relu : ${savedToken?.substring(0, 20)}...');
-    
-    // ✅ Maintenant charger les langues
+
     await loadLanguages();
   }
 
+  /// 🔹 Charge la liste des langues depuis l’API
   Future<void> loadLanguages() async {
     try {
       print('📡 Chargement des langues...');
@@ -79,6 +76,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
     }
   }
 
+  /// 🔹 Sauvegarde la préférence utilisateur (étape 1 : langue)
   Future<void> saveAndContinue() async {
     if (selectedLanguageId == null) return;
 
@@ -88,8 +86,8 @@ class _LanguageScreenState extends State<LanguageScreen> {
       final success = await api.createUserPreference(
         widget.userId,
         selectedLanguageId!,
-        "", // goalId sera ajouté dans l'écran suivant
-        "", // sourceId sera ajouté dans l'écran suivant
+        goalId: null,   // ✅ Étape 1 : goalId null
+        referralSourceId: null, // ✅ Étape 1 : sourceId null
       );
 
       if (success && mounted) {
@@ -115,9 +113,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => saving = false);
-      }
+      if (mounted) setState(() => saving = false);
     }
   }
 
