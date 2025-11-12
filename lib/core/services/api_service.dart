@@ -199,4 +199,18 @@ class ApiService {
       throw Exception('Failed to fetch user preference: ${res.body}');
     }
   }
+  Future<bool> hasUserPreferences(String userId) async {
+  final response = await http.get(
+    Uri.parse('$baseUrl/user-preferences/has-preferences/$userId'),
+    headers: await _getHeaders(),
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return data['hasPreferences'] ?? false;
+  } else {
+    return false;
+  }
+}
+
 }

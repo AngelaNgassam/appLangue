@@ -1,5 +1,6 @@
 // lib/screens/login_screen.dart
 
+import 'package:applangue/core/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/repositories/auth_repository.dart';
@@ -16,6 +17,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _repo = AuthRepository();
+  final _api = ApiService(); // ✅ on ajoute ton ApiService
 
   String _email = '';
   String _password = '';
@@ -31,9 +33,8 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       print('🔐 Tentative de connexion pour : $_email');
       
-      // Login avec le repository
+      // ✅ Authentification
       final authResponse = await _repo.loginUser(_email, _password);
-
       final token = authResponse.token;
       final user = authResponse.user;
 
@@ -41,43 +42,34 @@ class _LoginScreenState extends State<LoginScreen> {
       print('🔑 Token reçu : ${token.substring(0, 20)}...');
       print('👤 Rôle : ${user.role}');
 
-      // Stockage local du token et infos utilisateur
+      // ✅ Stockage du token et des infos utilisateur
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('jwt_token', token);
       await prefs.setString('user_role', user.role);
       await prefs.setString('user_id', user.id);
 
-      print('💾 Token sauvegardé dans SharedPreferences');
+      print('💾 Token et infos utilisateur sauvegardés.');
 
-      // ✅ Vérification : Relire le token pour confirmer
-      final savedToken = prefs.getString('jwt_token');
-      print('🔍 Token relu : ${savedToken?.substring(0, 20)}...');
-
-      // Affiche un message de succès
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Connexion réussie !')),
-        );
-      }
-
-      // Redirection selon rôle
       final role = user.role.toUpperCase();
 
-      if (role == 'USER') {
-        print('🚀 Redirection vers LanguageScreen');
+      if (role == 'ADMIN') {
+        // ✅ Redirection directe vers Dashboard
+        print('👑 ADMIN détecté → Dashboard');
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (_) => LanguageScreen(
-                userId: user.id,
-                token: token, // ✅ Passez le token directement
-              ),
-            ),
+            MaterialPageRoute(builder: (_) => const DashboardScreen()),
           );
         }
-      } else if (role == 'ADMIN') {
-        print('🚀 Redirection vers DashboardScreen');
+        return;
+      }
+
+      // ✅ Pour un USER, vérifier s’il a déjà ses préférences
+      print('🧩 Vérification des préférences utilisateur...');
+      final hasPreferences = await _api.hasUserPreferences(user.id);
+
+      if (hasPreferences) {
+        print('🎯 Préférences trouvées → Dashboard');
         if (mounted) {
           Navigator.pushReplacement(
             context,
@@ -85,21 +77,31 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       } else {
-        print('❌ Rôle inconnu : $role');
+        print('🗣️ Aucune préférence trouvée → LanguageScreen');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Rôle inconnu, accès refusé')),
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => LanguageScreen(
+                userId: user.id,
+                token: token,
+              ),
+            ),
           );
         }
       }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Connexion réussie ✅')),
+        );
+      }
     } catch (e) {
       print('❌ Erreur de connexion : $e');
-      
       String errorMessage = e.toString();
       if (errorMessage.startsWith('Exception: ')) {
         errorMessage = errorMessage.replaceFirst('Exception: ', '');
       }
-      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -109,9 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
+      if (mounted) setState(() => _loading = false);
     }
   }
 
