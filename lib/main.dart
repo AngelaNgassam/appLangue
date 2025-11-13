@@ -1,6 +1,9 @@
+// lib/main.dart
 
+import 'package:KmerLingo/core/constants/colors.dart';
 import 'package:flutter/material.dart';
-import  'package:applangue/presentation/screens/register_screen.dart';
+import 'package:lottie/lottie.dart';
+import 'presentation/screens/register_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -9,67 +12,135 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
+  static const int splashDurationSeconds = 5;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'AfriCM',
+      title: 'KmerLingo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        
-        
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        primaryColor: AppColors.primaryGreen,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primaryGreen,
+          primary: AppColors.primaryGreen,
+          secondary: AppColors.secondaryRed,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryGreen,
+            foregroundColor: Colors.white,
+          ),
+        ),
       ),
-      home: const RegisterScreen(),
+      home: SplashPage(durationSeconds: splashDurationSeconds),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class SplashPage extends StatefulWidget {
+  final int durationSeconds;
 
-  
-
-  final String title;
+  const SplashPage({super.key, this.durationSeconds = 5});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<SplashPage> createState() => _SplashPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
 
-  void _incrementCounter() {
-    setState(() {
-      
-      _counter++;
+  @override
+  void initState() {
+    super.initState();
+
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
+    );
+    _fadeController.forward();
+
+    Future.delayed(Duration(seconds: widget.durationSeconds), () {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const RegisterScreen()),
+      );
     });
   }
 
   @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final media = MediaQuery.of(context);
+    final width = media.size.width;
+    final height = media.size.height;
+    final isTablet = width > 600;
+
+    const logoPath = 'assets/logo.png';
+
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
+      backgroundColor: AppColors.lightGreen,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.lightGreen,
+              AppColors.lightGreen.withOpacity(0.95),
+              AppColors.primaryGreen.withOpacity(0.3),
+            ],
+            stops: const [0.0, 0.6, 1.0],
+          ),
         ),
-      )
+        child: SafeArea(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Center(
+              child: Hero(
+                tag: 'app_logo',
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxHeight: height * 0.4,
+                    maxWidth: isTablet ? width * 0.5 : width * 0.75,
+                  ),
+                  child: Image.asset(
+                    logoPath,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        padding: EdgeInsets.all(isTablet ? 60 : 50),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.language_rounded,
+                          size: isTablet ? 120 : 90,
+                          color: Colors.white,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
+

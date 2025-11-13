@@ -60,7 +60,7 @@ class AuthRepository {
       final body = jsonDecode(response.body);
       return body['message'];
     } else {
-      throw Exception('OTP verification failed: ${response.body}');
+      // throw Exception('OTP verification failed: ${response.body}');
     }
   }
 }

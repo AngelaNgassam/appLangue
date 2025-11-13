@@ -1,4 +1,4 @@
-name: applangue
+name: KmerLingo
 description: "A new Flutter project."
 
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -20,11 +20,15 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
- 
   flutter_lints: ^5.0.0
+  lottie: ^2.2.0
+  #rive: ^0.14.0
 
 
 flutter:
 
   uses-material-design: true
+  assets:
+    - assets/logo.png
+    - assets/Loading_animation.json
+
