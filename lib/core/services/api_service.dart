@@ -29,6 +29,91 @@ class ApiService {
     
     return headers;
   }
+  Future<List<dynamic>> fetchModules() async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/modules'),
+      headers: await _getHeaders(),
+    );
+    if (res.statusCode == 200) {
+      return json.decode(res.body); // contient chapters
+    } else {
+      throw Exception('Failed to fetch modules: ${res.body}');
+    }
+  }
+  Future<List<dynamic>> fetchChapters(String moduleId) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/chapters/module/$moduleId'),
+      headers: await _getHeaders(),
+    );
+    if (res.statusCode == 200) {
+      return json.decode(res.body); // contient lessons
+    } else {
+      throw Exception('Failed to fetch chapters: ${res.body}');
+    }
+  }
+  
+  Future<List<dynamic>> fetchLessons(String chapterId) async {
+  final res = await http.get(
+    Uri.parse('$baseUrl/lessons/chapter/$chapterId'),
+    headers: await _getHeaders(),
+  );
+  
+  if (res.statusCode == 200) {
+    return json.decode(res.body);
+  } else {
+    throw Exception('Failed to fetch lessons: ${res.body}');
+  }
+}
+
+  Future<List<dynamic>> fetchQuestions(String lessonId) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/question/lesson/$lessonId'),
+      headers: await _getHeaders(),
+    );
+    if (res.statusCode == 200) {
+      return json.decode(res.body); // contient questions avec audio si existant
+    } else {
+      throw Exception('Failed to fetch questions: ${res.body}');
+    }
+  }
+  Future<bool> submitAnswer({
+    required String userId,
+    required String questionId,
+    required String lessonId,
+    required String languageId,
+    String? userText,
+    String? userAudioPath, // chemin local du fichier audio
+  }) async {
+    Map<String, dynamic> body = {
+      "userId": userId,
+      "questionId": questionId,
+      "lessonId": lessonId,
+      "languageId": languageId,
+    };
+    if (userText != null) body['userText'] = userText;
+    if (userAudioPath != null) {
+      final bytes = await http.MultipartFile.fromPath('audio', userAudioPath);
+      // Pour l'instant on gère audio via Python backend, adapter si nécessaire
+    }
+
+    final res = await http.post(
+      Uri.parse('$baseUrl/ml/analyse'),
+      headers: await _getHeaders(),
+      body: json.encode(body),
+    );
+    return res.statusCode == 200;
+  }
+  Future<List<dynamic>> fetchUserProgress(String userId, String lessonId) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/progress/user/$userId/lesson/$lessonId'),
+      headers: await _getHeaders(),
+    );
+    if (res.statusCode == 200) {
+      return json.decode(res.body); // retourne les questions déjà répondues
+    } else {
+      throw Exception('Failed to fetch user progress: ${res.body}');
+    }
+  }
 
   /// 🔹 Récupère toutes les langues disponibles (PUBLIC - pas besoin de token)
   Future<List<Language>> fetchLanguages() async {
@@ -112,16 +197,6 @@ class ApiService {
     }
   }
 
-  /// 🔹 Ajouter une source (admin) - PROTÉGÉ
-  Future<bool> createReferralSource(String name) async {
-    final res = await http.post(
-      Uri.parse('$baseUrl/referralsources/create'),
-      headers: await _getHeaders(),
-      body: json.encode({"name": name}),
-    );
-
-    return res.statusCode == 201;
-  }
 
   /// 🔹 Mettre à jour une source (admin) - PROTÉGÉ
   Future<bool> updateReferralSource(String id, {String? name}) async {
@@ -136,14 +211,6 @@ class ApiService {
     return res.statusCode == 200;
   }
 
-  /// 🔹 Supprimer une source (admin) - PROTÉGÉ
-  Future<bool> deleteReferralSource(String id) async {
-    final res = await http.delete(
-      Uri.parse('$baseUrl/referralsources/delete/$id'),
-      headers: await _getHeaders(),
-    );
-    return res.statusCode == 200;
-  }
 
   /// 🔹 Crée une préférence utilisateur - PROTÉGÉ
   Future<bool> createUserPreference(
@@ -212,5 +279,6 @@ class ApiService {
     return false;
   }
 }
+
 
 }

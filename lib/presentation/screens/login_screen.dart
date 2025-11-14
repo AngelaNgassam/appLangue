@@ -1,6 +1,8 @@
 // lib/screens/login_screen.dart
 import 'package:KmerLingo/core/constants/colors.dart';
 import 'package:KmerLingo/core/services/api_service.dart';
+import 'package:KmerLingo/data/models/module.dart';
+import 'package:KmerLingo/presentation/screens/modules_screen.dart';
 import 'package:KmerLingo/presentation/screens/register_screen.dart';
 import 'package:KmerLingo/presentation/screens/success_screen.dart';
 import 'package:flutter/material.dart';
@@ -108,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const SuccessScreen()),
+            MaterialPageRoute(builder: (_) => const ModuleScreen()),
           );
         }
       } else {
