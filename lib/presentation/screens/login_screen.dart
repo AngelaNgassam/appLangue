@@ -5,6 +5,7 @@ import 'package:KmerLingo/data/models/module.dart';
 import 'package:KmerLingo/presentation/screens/modules_screen.dart';
 import 'package:KmerLingo/presentation/screens/register_screen.dart';
 import 'package:KmerLingo/presentation/screens/success_screen.dart';
+import 'package:KmerLingo/presentation/screens/userDahboard_scrren.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/repositories/auth_repository.dart';
@@ -110,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const ModuleScreen()),
+            MaterialPageRoute(builder: (_) => MainScreen(userId: user.id)),
           );
         }
       } else {

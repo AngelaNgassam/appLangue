@@ -11,6 +11,19 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+   # Pour lire des fichiers audio
+  audioplayers: ^6.5.1  
+
+  # Pour enregistrer/traiter du son
+  flutter_sound: ^9.2.13  
+  
+
+  # Pour accéder aux chemins du stockage local
+  path_provider: ^2.0.16  
+
+  # Pour demander les permissions (micro, stockage, etc.)
+  permission_handler: ^11.3.1  
+
   
 
 
@@ -23,7 +36,6 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^5.0.0
   lottie: ^2.2.0
-  #rive: ^0.14.0
 
 
 flutter:

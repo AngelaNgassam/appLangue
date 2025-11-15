@@ -19,16 +19,70 @@ class ApiService {
     final headers = {"Content-Type": "application/json"};
     print('📤 Headers envoyés : $headers'); // ✅ AJOUTEZ CETTE LIGNE
 
-    
     if (includeToken) {
       final token = await _getToken();
       if (token != null) {
         headers['Authorization'] = 'Bearer $token';
       }
     }
-    
+
     return headers;
   }
+ Future<List<dynamic>> fetchAllRankingsInDivision(String divisionId) async {
+  final res = await http.get(
+    Uri.parse('$baseUrl/rankings/division/$divisionId'),
+    headers: await _getHeaders(),
+  );
+
+  if (res.statusCode == 200) {
+    return json.decode(res.body);
+  } else {
+    throw Exception('Failed to fetch division rankings: ${res.body}');
+  }
+}
+
+// Récupère le ranking de la division pour un utilisateur spécifique
+Future<List<dynamic>> fetchDivisionRankingByUser(String userId) async {
+  final res = await http.get(
+    Uri.parse('$baseUrl/rankings/division/user/$userId'),
+    headers: await _getHeaders(),
+  );
+
+  if (res.statusCode == 200) {
+    return json.decode(res.body);
+  } else {
+    throw Exception('Failed to fetch division ranking by user: ${res.body}');
+  }
+}
+
+/// 🔹 Récupère toutes les statistiques d’un utilisateur
+Future<Map<String, dynamic>> fetchUserStats(String userId) async {
+  final res = await http.get(
+    Uri.parse('$baseUrl/stats/$userId'),
+    headers: await _getHeaders(),
+  );
+
+  if (res.statusCode == 200) {
+    return json.decode(res.body);
+  } else {
+    throw Exception('Failed to fetch user stats: ${res.body}');
+  }
+}
+
+
+// Récupère le ranking exact d'un utilisateur
+Future<dynamic> fetchUserRanking(String userId) async {
+  final res = await http.get(
+    Uri.parse('$baseUrl/rankings/user/$userId'),
+    headers: await _getHeaders(),
+  );
+
+  if (res.statusCode == 200) {
+    return json.decode(res.body);
+  } else {
+    throw Exception('Failed to fetch user ranking: ${res.body}');
+  }
+}
   Future<List<dynamic>> fetchModules() async {
     final res = await http.get(
       Uri.parse('$baseUrl/modules'),
@@ -40,6 +94,20 @@ class ApiService {
       throw Exception('Failed to fetch modules: ${res.body}');
     }
   }
+
+  Future<List<dynamic>> fetchDivisionRanking(String userId) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/rankings/division/user/$userId'),
+      headers: await _getHeaders(),
+    );
+
+    if (res.statusCode == 200) {
+      return json.decode(res.body);
+    } else {
+      throw Exception('Failed to fetch division ranking: ${res.body}');
+    }
+  }
+
   Future<List<dynamic>> fetchChapters(String moduleId) async {
     final res = await http.get(
       Uri.parse('$baseUrl/chapters/module/$moduleId'),
@@ -51,31 +119,33 @@ class ApiService {
       throw Exception('Failed to fetch chapters: ${res.body}');
     }
   }
-  
+
   Future<List<dynamic>> fetchLessons(String chapterId) async {
-  final res = await http.get(
-    Uri.parse('$baseUrl/lessons/chapter/$chapterId'),
-    headers: await _getHeaders(),
-  );
-  
-  if (res.statusCode == 200) {
-    return json.decode(res.body);
-  } else {
-    throw Exception('Failed to fetch lessons: ${res.body}');
+    final res = await http.get(
+      Uri.parse('$baseUrl/lessons/chapter/$chapterId'),
+      headers: await _getHeaders(),
+    );
+
+    if (res.statusCode == 200) {
+      return json.decode(res.body);
+    } else {
+      throw Exception('Failed to fetch lessons: ${res.body}');
+    }
   }
-}
 
   Future<List<dynamic>> fetchQuestions(String lessonId) async {
     final res = await http.get(
-      Uri.parse('$baseUrl/question/lesson/$lessonId'),
+      Uri.parse('$baseUrl/questions/lesson/$lessonId'),
       headers: await _getHeaders(),
     );
+
     if (res.statusCode == 200) {
-      return json.decode(res.body); // contient questions avec audio si existant
+      return json.decode(res.body); // Contiendra les questions audio et texte
     } else {
       throw Exception('Failed to fetch questions: ${res.body}');
     }
   }
+
   Future<bool> submitAnswer({
     required String userId,
     required String questionId,
@@ -93,7 +163,6 @@ class ApiService {
     if (userText != null) body['userText'] = userText;
     if (userAudioPath != null) {
       final bytes = await http.MultipartFile.fromPath('audio', userAudioPath);
-      // Pour l'instant on gère audio via Python backend, adapter si nécessaire
     }
 
     final res = await http.post(
@@ -103,7 +172,11 @@ class ApiService {
     );
     return res.statusCode == 200;
   }
-  Future<List<dynamic>> fetchUserProgress(String userId, String lessonId) async {
+
+  Future<List<dynamic>> fetchUserProgress(
+    String userId,
+    String lessonId,
+  ) async {
     final res = await http.get(
       Uri.parse('$baseUrl/progress/user/$userId/lesson/$lessonId'),
       headers: await _getHeaders(),
@@ -150,17 +223,18 @@ class ApiService {
     final res = await http.post(
       Uri.parse('$baseUrl/goals/create'),
       headers: await _getHeaders(),
-      body: json.encode({
-        "name": name,
-        "description": description,
-      }),
+      body: json.encode({"name": name, "description": description}),
     );
 
     return res.statusCode == 201;
   }
 
   /// 🔹 Mettre à jour un objectif (admin) - PROTÉGÉ
-  Future<bool> updateGoal(String id, {String? name, String? description}) async {
+  Future<bool> updateGoal(
+    String id, {
+    String? name,
+    String? description,
+  }) async {
     final res = await http.patch(
       Uri.parse('$baseUrl/goals/$id'),
       headers: await _getHeaders(),
@@ -173,14 +247,6 @@ class ApiService {
     return res.statusCode == 200;
   }
 
-  /// 🔹 Supprimer un objectif (admin) - PROTÉGÉ
-  Future<bool> deleteGoal(String id) async {
-    final res = await http.delete(
-      Uri.parse('$baseUrl/goals/delete/$id'),
-      headers: await _getHeaders(),
-    );
-    return res.statusCode == 200;
-  }
 
   /// 🔹 Récupère toutes les sources (referral sources) - PUBLIC
   Future<List<ReferralSource>> fetchReferralSources() async {
@@ -197,41 +263,37 @@ class ApiService {
     }
   }
 
-
   /// 🔹 Mettre à jour une source (admin) - PROTÉGÉ
   Future<bool> updateReferralSource(String id, {String? name}) async {
     final res = await http.patch(
       Uri.parse('$baseUrl/referralsources/$id'),
       headers: await _getHeaders(),
-      body: json.encode({
-        if (name != null) "name": name,
-      }),
+      body: json.encode({if (name != null) "name": name}),
     );
 
     return res.statusCode == 200;
   }
 
-
   /// 🔹 Crée une préférence utilisateur - PROTÉGÉ
   Future<bool> createUserPreference(
-  String userId,
-  String languageId, {
-  String? goalId,
-  String? referralSourceId,
-}) async {
-  final res = await http.post(
-    Uri.parse('$baseUrl/user-preferences/create'),
-    headers: await _getHeaders(),
-    body: json.encode({
-      "userId": userId,
-      "targetLanguageId": languageId,
-      if (goalId != null) "goalId": goalId,
-      if (referralSourceId != null) "referralSourceId": referralSourceId,
-    }),
-  );
+    String userId,
+    String languageId, {
+    String? goalId,
+    String? referralSourceId,
+  }) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/user-preferences/create'),
+      headers: await _getHeaders(),
+      body: json.encode({
+        "userId": userId,
+        "targetLanguageId": languageId,
+        if (goalId != null) "goalId": goalId,
+        if (referralSourceId != null) "referralSourceId": referralSourceId,
+      }),
+    );
 
-  return res.statusCode == 201 || res.statusCode == 200;
-}
+    return res.statusCode == 201 || res.statusCode == 200;
+  }
 
   /// 🔹 Met à jour une préférence utilisateur - PROTÉGÉ
   Future<bool> updateUserPreference(
@@ -266,19 +328,89 @@ class ApiService {
       throw Exception('Failed to fetch user preference: ${res.body}');
     }
   }
+
   Future<bool> hasUserPreferences(String userId) async {
-  final response = await http.get(
-    Uri.parse('$baseUrl/user-preferences/has-preferences/$userId'),
-    headers: await _getHeaders(),
-  );
+    final response = await http.get(
+      Uri.parse('$baseUrl/user-preferences/has-preferences/$userId'),
+      headers: await _getHeaders(),
+    );
 
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    return data['hasPreferences'] ?? false;
-  } else {
-    return false;
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['hasPreferences'] ?? false;
+    } else {
+      return false;
+    }
   }
-}
 
+  // 🔹 Récupérer les points d'un utilisateur
+  Future<int> fetchUserPoints(String userId) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/points/user/$userId'),
+      headers: await _getHeaders(),
+    );
 
+    if (res.statusCode == 200) {
+      final data = json.decode(res.body);
+      return data['value'] as int;
+    } else {
+      throw Exception('Failed to fetch user points: ${res.body}');
+    }
+  }
+
+  // 🔹 Ajouter ou mettre à jour les points d'un utilisateur
+  Future<bool> updateUserPoints(String userId, int value) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/points/update'),
+      headers: await _getHeaders(),
+      body: json.encode({"userId": userId, "value": value}),
+    );
+
+    return res.statusCode == 200 || res.statusCode == 201;
+  }
+
+  // 🔹 Récupérer le classement d'une division sur une période
+  Future<List<dynamic>> fetchRanking(
+    String divisionId,
+    DateTime periodStart,
+    DateTime periodEnd,
+  ) async {
+    final res = await http.get(
+      Uri.parse(
+        '$baseUrl/ranking/division/$divisionId?periodStart=${periodStart.toIso8601String()}&periodEnd=${periodEnd.toIso8601String()}',
+      ),
+      headers: await _getHeaders(),
+    );
+
+    if (res.statusCode == 200) {
+      return json.decode(res.body);
+    } else {
+      throw Exception('Failed to fetch ranking: ${res.body}');
+    }
+  }
+
+  // 🔹 Créer ou mettre à jour un ranking
+  Future<bool> updateRanking({
+    required String userId,
+    required String pointId,
+    required String divisionId,
+    required int rank,
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  }) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/ranking/update'),
+      headers: await _getHeaders(),
+      body: json.encode({
+        "userId": userId,
+        "pointId": pointId,
+        "divisionId": divisionId,
+        "rank": rank,
+        "periodStart": periodStart.toIso8601String(),
+        "periodEnd": periodEnd.toIso8601String(),
+      }),
+    );
+
+    return res.statusCode == 200 || res.statusCode == 201;
+  }
 }
