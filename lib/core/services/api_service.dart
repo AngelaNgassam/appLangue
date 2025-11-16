@@ -42,14 +42,15 @@ class ApiService {
   }
 
   /// 🔹 Marquer une notification comme lue
-  Future<void> markNotificationAsRead(String notificationId) async {
-    final url = Uri.parse('$baseUrl/notifications/read/$notificationId');
-    final response = await http.put(url, headers: await _getHeaders());
+ Future<void> markNotificationAsRead(String notificationId) async {
+  final url = Uri.parse('$baseUrl/notifications/read/$notificationId');
+  final response = await http.patch(url, headers: await _getHeaders());
 
-    if (response.statusCode != 200) {
-      throw Exception('Erreur lors de la mise à jour de la notification: ${response.body}');
-    }
+  if (response.statusCode != 200) {
+    throw Exception('Erreur lors de la mise à jour de la notification: ${response.body}');
   }
+}
+
 Future<void> submitFeedback({
   required String userId,
   required int rating,
