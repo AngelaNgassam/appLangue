@@ -1,9 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:KmerLingo/core/services/api_service.dart';
 import 'package:KmerLingo/presentation/screens/feeback_Screen.dart';
 import 'package:KmerLingo/presentation/screens/modules_screen.dart';
+import 'package:KmerLingo/presentation/screens/notification_screen.dart';
 import 'package:KmerLingo/presentation/screens/profile_screen.dart';
 import 'package:KmerLingo/presentation/screens/rankingScreen.dart';
-import 'package:flutter/material.dart';
 
 class MainScreen extends StatefulWidget {
   final String userId;
@@ -16,12 +17,15 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
-
+  final ApiService api = ApiService();
+  int unreadCount = 0;
   late final List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
+    _loadUnreadCount(); // Charger le nombre de notifications non lues au démarrage
+
     _screens = [
       HomeScreen(),
       DivisionLeaderboardPage(userId: widget.userId),
@@ -29,7 +33,18 @@ class _MainScreenState extends State<MainScreen> {
       ModuleScreen(),
       ProfileScreen(userId: widget.userId),
       FeedbackScreen(userId: widget.userId),
+      NotificationScreen(
+        userId: widget.userId,
+        onReadChanged: () => _loadUnreadCount(),
+      ),
     ];
+  }
+
+  Future<void> _loadUnreadCount() async {
+    final notifications = await api.fetchNotifications(widget.userId);
+    setState(() {
+      unreadCount = notifications.where((n) => !n.isRead).length;
+    });
   }
 
   @override
@@ -41,13 +56,49 @@ class _MainScreenState extends State<MainScreen> {
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Accueil'),
-          BottomNavigationBarItem(icon: Icon(Icons.emoji_events_rounded), label: 'Classement'),
-          BottomNavigationBarItem(icon: Icon(Icons.analytics_rounded), label: 'Statistiques'),
-          BottomNavigationBarItem(icon: Icon(Icons.menu_book_rounded), label: 'Cours'),
-          BottomNavigationBarItem(icon: Icon(Icons.menu_book_rounded), label: 'Profile'),
-          BottomNavigationBarItem(icon: Icon(Icons.menu_book_rounded), label: 'Feedback'),
+        items: [
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.home_rounded), label: 'Accueil'),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.emoji_events_rounded), label: 'Classement'),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.analytics_rounded), label: 'Statistiques'),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.menu_book_rounded), label: 'Cours'),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.person_rounded), label: 'Profile'),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.feedback_rounded), label: 'Feedback'),
+          BottomNavigationBarItem(
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.notifications_rounded),
+                if (unreadCount > 0)
+                  Positioned(
+                    right: -6,
+                    top: -3,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Text(
+                        '$unreadCount',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            label: 'Notifications',
+          ),
         ],
         onTap: (index) {
           setState(() {

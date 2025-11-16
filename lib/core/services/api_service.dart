@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/language.dart';
 import '../../data/models/goal.dart';
+import '../../data/models/notification.dart';
 import '../../data/models/referral_source.dart';
 
 class ApiService {
@@ -27,6 +28,27 @@ class ApiService {
     }
 
     return headers;
+  }
+  Future<List<AppNotification>> fetchNotifications(String userId) async {
+    final url = Uri.parse('$baseUrl/notifications/$userId');
+    final response = await http.get(url, headers: await _getHeaders());
+
+    if (response.statusCode == 200) {
+      final List data = json.decode(response.body);
+      return data.map((json) => AppNotification.fromJson(json)).toList();
+    } else {
+      throw Exception('Erreur lors de la récupération des notifications: ${response.body}');
+    }
+  }
+
+  /// 🔹 Marquer une notification comme lue
+  Future<void> markNotificationAsRead(String notificationId) async {
+    final url = Uri.parse('$baseUrl/notifications/read/$notificationId');
+    final response = await http.put(url, headers: await _getHeaders());
+
+    if (response.statusCode != 200) {
+      throw Exception('Erreur lors de la mise à jour de la notification: ${response.body}');
+    }
   }
 Future<void> submitFeedback({
   required String userId,
