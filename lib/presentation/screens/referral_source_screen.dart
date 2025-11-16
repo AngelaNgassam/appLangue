@@ -1,3 +1,4 @@
+import 'package:KmerLingo/presentation/screens/userDahboard_scrren.dart';
 import 'package:flutter/material.dart';
 import '../../../core/services/api_service.dart';
 import '../../../data/models/referral_source.dart';
@@ -68,7 +69,7 @@ class _ReferralSourceScreenState extends State<ReferralSourceScreen> {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const SuccessScreen(),
+                              builder: (_) => MainScreen(userId: widget.userId),
                             ),
                           );
                         },
