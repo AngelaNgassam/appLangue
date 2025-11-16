@@ -13,6 +13,8 @@ dependencies:
     sdk: flutter
    # Pour lire des fichiers audio
   audioplayers: ^6.5.1  
+  fl_chart: ^0.69.0
+
 
   # Pour enregistrer/traiter du son
   flutter_sound: ^9.2.13  

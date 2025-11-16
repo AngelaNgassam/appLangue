@@ -28,61 +28,124 @@ class ApiService {
 
     return headers;
   }
- Future<List<dynamic>> fetchAllRankingsInDivision(String divisionId) async {
-  final res = await http.get(
-    Uri.parse('$baseUrl/rankings/division/$divisionId'),
+Future<void> submitFeedback({
+  required String userId,
+  required int rating,
+  String? comment,
+}) async {
+  final url = Uri.parse('$baseUrl/feedback'); // ✅ juste /feedback
+
+  final response = await http.post(
+    url,
     headers: await _getHeaders(),
+    body: json.encode({
+      'userId': userId, // ✅ userId dans le body
+      'rating': rating,
+      'comment': comment,
+    }),
   );
 
-  if (res.statusCode == 200) {
-    return json.decode(res.body);
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    print("Feedback envoyé avec succès !");
   } else {
-    throw Exception('Failed to fetch division rankings: ${res.body}');
-  }
-}
-
-// Récupère le ranking de la division pour un utilisateur spécifique
-Future<List<dynamic>> fetchDivisionRankingByUser(String userId) async {
-  final res = await http.get(
-    Uri.parse('$baseUrl/rankings/division/user/$userId'),
-    headers: await _getHeaders(),
-  );
-
-  if (res.statusCode == 200) {
-    return json.decode(res.body);
-  } else {
-    throw Exception('Failed to fetch division ranking by user: ${res.body}');
-  }
-}
-
-/// 🔹 Récupère toutes les statistiques d’un utilisateur
-Future<Map<String, dynamic>> fetchUserStats(String userId) async {
-  final res = await http.get(
-    Uri.parse('$baseUrl/stats/$userId'),
-    headers: await _getHeaders(),
-  );
-
-  if (res.statusCode == 200) {
-    return json.decode(res.body);
-  } else {
-    throw Exception('Failed to fetch user stats: ${res.body}');
+    throw Exception('Erreur lors de l’envoi du feedback: ${response.body}');
   }
 }
 
 
-// Récupère le ranking exact d'un utilisateur
-Future<dynamic> fetchUserRanking(String userId) async {
-  final res = await http.get(
-    Uri.parse('$baseUrl/rankings/user/$userId'),
-    headers: await _getHeaders(),
-  );
 
-  if (res.statusCode == 200) {
-    return json.decode(res.body);
-  } else {
-    throw Exception('Failed to fetch user ranking: ${res.body}');
+  Future<List<dynamic>> fetchAllRankingsInDivision(String divisionId) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/rankings/division/$divisionId'),
+      headers: await _getHeaders(),
+    );
+
+    if (res.statusCode == 200) {
+      return json.decode(res.body);
+    } else {
+      throw Exception('Failed to fetch division rankings: ${res.body}');
+    }
   }
-}
+
+  /// 🔹 Change le mot de passe de l'utilisateur
+  Future<String> changePassword({
+    required String userId,
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final url = Uri.parse('$baseUrl/profile/change-password/$userId');
+
+    final response = await http.patch(
+      url,
+      headers: await _getHeaders(),
+      body: json.encode({
+        'oldPassword': oldPassword,
+        'newPassword': newPassword,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return "Mot de passe changé avec succès"; // retourne un message String
+    } else {
+      throw Exception('Échec du changement : ${response.body}');
+    }
+  }
+
+  /// 🔹 Récupère le profil d’un utilisateur
+  Future<Map<String, dynamic>> getProfile(String userId) async {
+    final url = Uri.parse('$baseUrl/profile/$userId');
+
+    final response = await http.get(url, headers: await _getHeaders());
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception("Failed to load profile: ${response.body}");
+    }
+  }
+
+  // Récupère le ranking de la division pour un utilisateur spécifique
+  Future<List<dynamic>> fetchDivisionRankingByUser(String userId) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/rankings/division/user/$userId'),
+      headers: await _getHeaders(),
+    );
+
+    if (res.statusCode == 200) {
+      return json.decode(res.body);
+    } else {
+      throw Exception('Failed to fetch division ranking by user: ${res.body}');
+    }
+  }
+
+  /// 🔹 Récupère toutes les statistiques d’un utilisateur
+  Future<Map<String, dynamic>> fetchUserStats(String userId) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/stats/$userId'),
+      headers: await _getHeaders(),
+    );
+
+    if (res.statusCode == 200) {
+      return json.decode(res.body);
+    } else {
+      throw Exception('Failed to fetch user stats: ${res.body}');
+    }
+  }
+
+  // Récupère le ranking exact d'un utilisateur
+  Future<dynamic> fetchUserRanking(String userId) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/rankings/user/$userId'),
+      headers: await _getHeaders(),
+    );
+
+    if (res.statusCode == 200) {
+      return json.decode(res.body);
+    } else {
+      throw Exception('Failed to fetch user ranking: ${res.body}');
+    }
+  }
+
   Future<List<dynamic>> fetchModules() async {
     final res = await http.get(
       Uri.parse('$baseUrl/modules'),
@@ -246,7 +309,6 @@ Future<dynamic> fetchUserRanking(String userId) async {
 
     return res.statusCode == 200;
   }
-
 
   /// 🔹 Récupère toutes les sources (referral sources) - PUBLIC
   Future<List<ReferralSource>> fetchReferralSources() async {

@@ -1,5 +1,7 @@
 import 'package:KmerLingo/core/services/api_service.dart';
+import 'package:KmerLingo/presentation/screens/feeback_Screen.dart';
 import 'package:KmerLingo/presentation/screens/modules_screen.dart';
+import 'package:KmerLingo/presentation/screens/profile_screen.dart';
 import 'package:KmerLingo/presentation/screens/rankingScreen.dart';
 import 'package:flutter/material.dart';
 
@@ -25,6 +27,8 @@ class _MainScreenState extends State<MainScreen> {
       DivisionLeaderboardPage(userId: widget.userId),
       StatisticsScreen(userId: widget.userId),
       ModuleScreen(),
+      ProfileScreen(userId: widget.userId),
+      FeedbackScreen(userId: widget.userId),
     ];
   }
 
@@ -42,6 +46,8 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.emoji_events_rounded), label: 'Classement'),
           BottomNavigationBarItem(icon: Icon(Icons.analytics_rounded), label: 'Statistiques'),
           BottomNavigationBarItem(icon: Icon(Icons.menu_book_rounded), label: 'Cours'),
+          BottomNavigationBarItem(icon: Icon(Icons.menu_book_rounded), label: 'Profile'),
+          BottomNavigationBarItem(icon: Icon(Icons.menu_book_rounded), label: 'Feedback'),
         ],
         onTap: (index) {
           setState(() {
@@ -93,8 +99,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
-
-/// ---------------- STATISTICS ----------------
+// ---------------- STATISTICS ----------------
 class StatisticsScreen extends StatefulWidget {
   final String userId;
 
@@ -104,29 +109,52 @@ class StatisticsScreen extends StatefulWidget {
   State<StatisticsScreen> createState() => _StatisticsScreenState();
 }
 
-class _StatisticsScreenState extends State<StatisticsScreen> {
+class _StatisticsScreenState extends State<StatisticsScreen>
+    with SingleTickerProviderStateMixin {
   final ApiService api = ApiService();
   late Future<Map<String, dynamic>> statsFuture;
+  late AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
     statsFuture = api.fetchUserStats(widget.userId);
+
+    // ✅ AnimationController correctement initialisé
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    // On lance l’animation après la frame initiale pour éviter l’erreur
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _animationController.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.orange[50],
+      backgroundColor: Colors.blue.shade50,
       appBar: AppBar(
         title: const Text("Statistiques"),
-        backgroundColor: Colors.orange,
+        backgroundColor: Colors.blue.shade600,
+        centerTitle: true,
+        elevation: 0,
       ),
       body: FutureBuilder<Map<String, dynamic>>(
         future: statsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return _buildLoading();
           }
 
           if (snapshot.hasError) {
@@ -139,44 +167,64 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           }
 
           final stats = snapshot.data!;
+          final points = stats["points"];
+          final progression = stats["progression"];
+          final ranking = stats["ranking"];
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                /// Total points card
                 _buildStatCard(
                   title: "Total Points",
-                  value: "${stats['totalPoints']} pts",
+                  value: "${points['totalPoints']} pts",
                   icon: Icons.star_rounded,
                   color: Colors.orange,
+                  index: 0,
                 ),
-
-                const SizedBox(height: 20),
-
-                /// Questions correct / incorrect
+                const SizedBox(height: 16),
+                _buildStatCard(
+                  title: "Division",
+                  value: ranking != null
+                      ? "${ranking['division']} (Rank ${ranking['rank']})"
+                      : "Non classé",
+                  icon: Icons.leaderboard_rounded,
+                  color: Colors.deepPurple,
+                  index: 1,
+                ),
+                const SizedBox(height: 16),
                 _buildStatCard(
                   title: "Questions Correctes",
-                  value: "${stats['questionsCorrect']}",
+                  value: "${progression['correct']}",
                   icon: Icons.check_circle_rounded,
                   color: Colors.green,
+                  index: 2,
                 ),
                 _buildStatCard(
                   title: "Questions Incorrectes",
-                  value: "${stats['questionsWrong']}",
+                  value: "${progression['wrong']}",
                   icon: Icons.cancel_rounded,
                   color: Colors.red,
+                  index: 3,
                 ),
-
-                const SizedBox(height: 20),
-
-                /// Lessons completed
+                _buildStatCard(
+                  title: "Précision",
+                  value: "${progression['accuracy']}%",
+                  icon: Icons.percent_rounded,
+                  color: Colors.teal,
+                  index: 4,
+                ),
+                const SizedBox(height: 16),
                 _buildStatCard(
                   title: "Leçons Complétées",
-                  value: "${stats['totalLessonsCompleted']}",
+                  value: "${progression['lessonsCompleted']}",
                   icon: Icons.menu_book_rounded,
                   color: Colors.blue,
+                  index: 5,
                 ),
+                const SizedBox(height: 16),
+                if (progression["byLanguage"] != null)
+                  ..._buildLanguageStats(progression["byLanguage"]),
               ],
             ),
           );
@@ -185,30 +233,80 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
+  /// Carte Statistique avec animation FadeTransition
   Widget _buildStatCard({
     required String title,
     required String value,
     required IconData icon,
     required Color color,
+    required int index,
   }) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(20),
-        leading: CircleAvatar(
-          radius: 30,
-          backgroundColor: color.withOpacity(0.2),
-          child: Icon(icon, size: 30, color: color),
+    // Chaque carte a un intervalle différent pour un effet “staggered”
+    final animation = CurvedAnimation(
+      parent: _animationController,
+      curve: Interval(
+        index * 0.1,
+        1.0,
+        curve: Curves.easeOut,
+      ),
+    );
+
+    return FadeTransition(
+      opacity: animation,
+      child: Card(
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shadowColor: color.withOpacity(0.3),
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(20),
+          leading: CircleAvatar(
+            radius: 30,
+            backgroundColor: color.withOpacity(0.2),
+            child: Icon(icon, size: 30, color: color),
+          ),
+          title: Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(
+            value,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
         ),
-        title: Text(
-          title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
+  List<Widget> _buildLanguageStats(Map<String, dynamic> languages) {
+    List<Widget> widgets = [];
+    int i = 6; // Commence après les premières cartes
+    languages.forEach((lang, data) {
+      widgets.add(
+        _buildStatCard(
+          title: "Langue : $lang",
+          value:
+              "Total: ${data['total']}  |  ✓ ${data['correct']}  × ${data['wrong']}",
+          icon: Icons.language_rounded,
+          color: Colors.indigo,
+          index: i++,
         ),
-        subtitle: Text(
-          value,
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
+      );
+    });
+    return widgets;
+  }
+
+  Widget _buildLoading() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: Colors.orange.shade700),
+          const SizedBox(height: 16),
+          const Text(
+            "Chargement des statistiques...",
+            style: TextStyle(fontSize: 16),
+          ),
+        ],
       ),
     );
   }
