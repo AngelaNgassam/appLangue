@@ -2,7 +2,7 @@ import 'package:KmerLingo/core/services/api_service.dart';
 import 'package:flutter/material.dart';
 import '../../data/models/chapter.dart';
 import '../../data/models/lesson.dart';
-import 'question_screen.dart';
+import 'loading_screen.dart';  // 👉 IMPORT AJOUTÉ
 
 class LessonScreen extends StatefulWidget {
   final Chapter chapter;
@@ -103,23 +103,11 @@ class _LessonScreenState extends State<LessonScreen>
   Widget _buildLessonCard(Lesson lesson) {
     return GestureDetector(
       onTap: () {
+        // 👉 AFFICHER LE LOADING SCREEN 3 SECONDES AVANT LES QUESTIONS
         Navigator.push(
           context,
-          PageRouteBuilder(
-            transitionDuration: const Duration(milliseconds: 500),
-            pageBuilder: (_, __, ___) => QuestionScreen(lesson: lesson),
-            transitionsBuilder: (_, animation, __, child) {
-              return FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0.1, 0),
-                    end: Offset.zero,
-                  ).animate(animation),
-                  child: child,
-                ),
-              );
-            },
+          MaterialPageRoute(
+            builder: (_) => LoadingScreen(lesson: lesson),
           ),
         );
       },

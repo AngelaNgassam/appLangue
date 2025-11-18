@@ -46,4 +46,8 @@ flutter:
   assets:
     - assets/logo.png
     - assets/Loading_animation.json
+    - assets/win_question.mp3
+    - assets/lost.mp3
+    - assets/achievement.mp3
+
 

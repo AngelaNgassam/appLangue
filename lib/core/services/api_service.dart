@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:KmerLingo/data/models/question.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/language.dart';
@@ -10,25 +11,98 @@ class ApiService {
   final String baseUrl = "http://localhost:3000"; // Ton backend NestJS
 
   /// 🔹 Récupère le token JWT stocké localement
+  
+  /// 🔹 Récupère le token JWT stocké localement
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('jwt_token');
+    final token = prefs.getString('jwt_token');
+    print('💎 Token récupéré: $token'); // Debug
+    return token;
   }
 
   /// 🔹 Construit les headers avec le token si disponible
   Future<Map<String, String>> _getHeaders({bool includeToken = true}) async {
     final headers = {"Content-Type": "application/json"};
-    print('📤 Headers envoyés : $headers'); // ✅ AJOUTEZ CETTE LIGNE
+    final token = includeToken ? await _getToken() : null;
 
-    if (includeToken) {
-      final token = await _getToken();
-      if (token != null) {
-        headers['Authorization'] = 'Bearer $token';
-      }
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    } else if (includeToken) {
+      print("⚠️ Aucun token trouvé. La requête peut échouer côté backend.");
     }
 
+    print('📤 Headers envoyés: $headers'); // Debug
     return headers;
   }
+  Future<List<Question>> getQuestionsByLesson(String lessonId) async {
+    final url = Uri.parse('$baseUrl/question/lesson/$lessonId');
+    final response = await http.get(url, headers: await _getHeaders());
+
+    if (response.statusCode == 200) {
+      final List data = json.decode(response.body);
+      return data.map((json) => Question.fromJson(json)).toList();
+    } else {
+      throw Exception('Erreur lors de la récupération des questions: ${response.body}');
+    }
+  }
+
+  /// 🔹 Récupérer une question par son ID
+  Future<Question> getQuestionById(String questionId) async {
+    final url = Uri.parse('$baseUrl/question/$questionId');
+    final response = await http.get(url, headers: await _getHeaders());
+
+    if (response.statusCode == 200) {
+      return Question.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Erreur lors de la récupération de la question: ${response.body}');
+    }
+  }
+
+  /// 🔹 Vérifier la réponse de l'utilisateur
+ Future<Map<String, dynamic>> checkAnswer(String questionId, String userAnswer) async {
+  final url = Uri.parse('$baseUrl/question/$questionId/check');
+
+  // Debug : affichage de la requête
+  print('🔍 Vérification de la réponse pour la question $questionId avec la réponse: "$userAnswer"');
+
+  final headers = await _getHeaders(); // ton service pour récupérer les headers
+
+  try {
+    final response = await http.post(
+      url,
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({"answer": userAnswer}),
+    );
+
+    // Accepter 200 et 201 comme succès
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final Map<String, dynamic> data = json.decode(response.body);
+
+      // Debug : affichage de la réponse du backend
+      print('✅ Résultat du backend: $data');
+
+      // S'assurer que correctAnswers est toujours une liste de strings
+      if (data['correctAnswers'] != null && data['correctAnswers'] is List) {
+        data['correctAnswers'] = List<String>.from(data['correctAnswers'].map((e) => e.toString()));
+      } else {
+        data['correctAnswers'] = [];
+      }
+
+      data['isCorrect'] = data['isCorrect'] ?? false;
+
+      return data;
+    } else {
+      throw Exception('Erreur ${response.statusCode}: ${response.body}');
+    }
+  } catch (e) {
+    print('❌ Erreur lors de la vérification: $e');
+    rethrow;
+  }
+}
+
   Future<List<AppNotification>> fetchNotifications(String userId) async {
     final url = Uri.parse('$baseUrl/notifications/$userId');
     final response = await http.get(url, headers: await _getHeaders());

@@ -112,37 +112,130 @@ class _MainScreenState extends State<MainScreen> {
 
 /// ---------------- HOME SCREEN ----------------
 class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.lightBlue.shade200, Colors.blue.shade600],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+    return Scaffold(
+      body: Container(
+        padding: const EdgeInsets.all(25),
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.blue.shade800,
+              Colors.blue.shade500,
+              Colors.lightBlue.shade300,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
-      ),
-      child: Center(
+
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.language_rounded, size: 100, color: Colors.white),
-            SizedBox(height: 20),
-            Text(
-              'Bienvenue sur KmerLingo !',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+          children: [
+
+            // 🔥 ICON + ANIMATION
+            TweenAnimationBuilder<double>(
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.easeOutBack,
+              tween: Tween(begin: 0, end: 1),
+              builder: (context, value, child) {
+                return Transform.scale(
+                  scale: value,
+                  child: child,
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(25),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.language_rounded,
+                  size: 110,
+                  color: Colors.white,
+                ),
               ),
-              textAlign: TextAlign.center,
             ),
-            SizedBox(height: 20),
-            Text(
-              'Apprends des langues, progresse et deviens champion !',
-              style: TextStyle(fontSize: 18, color: Colors.white70),
+
+            const SizedBox(height: 35),
+
+            // ⭐ TITRE PRINCIPAL
+            const Text(
+              "Bienvenue sur KmerLingo",
               textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                height: 1.3,
+                letterSpacing: 1,
+              ),
+            ),
+
+            const SizedBox(height: 15),
+
+            // 📘 SOUS-TEXTE / SLOGAN
+            const Text(
+              "Améliore ton niveau en langues avec plaisir.\n"
+              "Progresse chaque jour, débloque des niveaux\n"
+              "et deviens un vrai champion du langage !",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 17,
+                color: Colors.white70,
+                height: 1.5,
+              ),
+            ),
+
+            const SizedBox(height: 40),
+
+            // 🔥 BOUTON START (optionnel)
+            TweenAnimationBuilder<double>(
+              duration: const Duration(milliseconds: 900),
+              curve: Curves.easeOut,
+              tween: Tween(begin: 0, end: 1),
+              builder: (context, value, child) {
+                return Opacity(
+                  opacity: value,
+                  child: child,
+                );
+              },
+              child: GestureDetector(
+                onTap: () {
+                  // → Navigation si tu veux
+                  // Navigator.push(context, MaterialPageRoute(builder: (_) => NextScreen()));
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 15,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      )
+                    ],
+                  ),
+                  child: Text(
+                    "Commencer",
+                    style: TextStyle(
+                      color: Colors.blue.shade700,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
