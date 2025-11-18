@@ -1,3 +1,4 @@
+import 'package:KmerLingo/core/constants/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:KmerLingo/core/services/api_service.dart';
 import '../../data/models/notification.dart';
@@ -59,7 +60,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Notifications"),
-        backgroundColor: Colors.orange,
+        backgroundColor: AppColors.warning,
       ),
       body: FutureBuilder<List<AppNotification>>(
         future: notificationsFuture,

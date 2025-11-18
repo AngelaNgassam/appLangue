@@ -46,4 +46,5 @@ flutter:
   assets:
     - assets/logo.png
     - assets/Loading_animation.json
+    - assets/favorites.json
 

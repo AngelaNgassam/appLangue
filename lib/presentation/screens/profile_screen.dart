@@ -37,16 +37,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue.shade50,
+      backgroundColor: const Color(0xFFF1F8E9),
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.blue.shade600,
-        title: const Text("Mon Profil", style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF4CAF50),
+        title: const Text(
+          "Mon Profil",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
         centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
 
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF4CAF50),
+              ),
+            )
           : profile == null
               ? const Center(child: Text("Profil introuvable"))
               : SingleChildScrollView(
@@ -55,114 +66,198 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       // ----------------- HEADER -----------------
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 30),
+                        padding: const EdgeInsets.symmetric(vertical: 40),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [Colors.blue.shade600, Colors.blue.shade300],
+                            colors: [
+                              const Color(0xFF4CAF50),
+                              const Color(0xFF81C784),
+                            ],
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                           ),
                           borderRadius: const BorderRadius.only(
-                            bottomLeft: Radius.circular(35),
-                            bottomRight: Radius.circular(35),
+                            bottomLeft: Radius.circular(40),
+                            bottomRight: Radius.circular(40),
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.green.withOpacity(0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
                         ),
                         child: Column(
                           children: [
                             Hero(
                               tag: "profile_avatar_${widget.userId}",
-                              child: CircleAvatar(
-                                radius: 55,
-                                backgroundColor: Colors.white,
-                                child: const Icon(Icons.person, size: 60, color: Colors.blue),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 4,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.2),
+                                      blurRadius: 15,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                                child: const CircleAvatar(
+                                  radius: 60,
+                                  backgroundColor: Colors.white,
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 70,
+                                    color: Color(0xFF4CAF50),
+                                  ),
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 15),
+                            const SizedBox(height: 18),
                             Text(
                               "${profile!['firstName']} ${profile!['lastName']}",
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 22,
+                                fontSize: 26,
                                 fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
                               ),
                             ),
-                            const SizedBox(height: 5),
-                            Text(
-                              profile!['email'],
-                              style: const TextStyle(color: Colors.white70, fontSize: 15),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                profile!['email'],
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 25),
 
                       // ----------------- CARD INFOS -----------------
                       AnimatedOpacity(
                         opacity: 1,
                         duration: const Duration(milliseconds: 600),
                         child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 16),
-                          padding: const EdgeInsets.all(20),
+                          margin: const EdgeInsets.symmetric(horizontal: 20),
+                          padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
+                            borderRadius: BorderRadius.circular(22),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
+                                color: Colors.green.withOpacity(0.15),
+                                blurRadius: 20,
+                                spreadRadius: 3,
+                                offset: const Offset(0, 8),
                               ),
                             ],
                           ),
                           child: Column(
                             children: [
-                              _infoTile(Icons.phone, "Téléphone", profile!['phone']),
-                              const Divider(),
-                              _infoTile(Icons.email, "Email", profile!['email']),
-                              const Divider(),
-                              _infoTile(Icons.verified_user, "ID Utilisateur", widget.userId),
+                              _infoTile(
+                                Icons.phone_rounded,
+                                "Téléphone",
+                                profile!['phone'],
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 12),
+                                child: Divider(thickness: 1),
+                              ),
+                              _infoTile(
+                                Icons.email_rounded,
+                                "Email",
+                                profile!['email'],
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 12),
+                                child: Divider(thickness: 1),
+                              ),
+                              _infoTile(
+                                Icons.verified_user_rounded,
+                                "ID Utilisateur",
+                                widget.userId,
+                              ),
                             ],
                           ),
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 25),
 
                       // ----------------- BOUTON CHANGE PASSWORD -----------------
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue.shade600,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ChangePasswordScreen(userId: widget.userId),
-                              ),
-                            );
-                          },
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.lock_reset, color: Colors.white),
-                              SizedBox(width: 10),
-                              Text(
-                                "Changer le mot de passe",
-                                style: TextStyle(color: Colors.white, fontSize: 16),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.green.withOpacity(0.3),
+                                blurRadius: 15,
+                                offset: const Offset(0, 6),
                               ),
                             ],
+                          ),
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4CAF50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              elevation: 0,
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ChangePasswordScreen(
+                                    userId: widget.userId,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.lock_reset_rounded, color: Colors.white, size: 24),
+                                SizedBox(width: 12),
+                                Text(
+                                  "Changer le mot de passe",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
 
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 40),
                     ],
                   ),
                 ),
@@ -173,25 +268,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _infoTile(IconData icon, String label, String value) {
     return Row(
       children: [
-        CircleAvatar(
-          radius: 20,
-          backgroundColor: Colors.blue.shade50,
-          child: Icon(icon, color: Colors.blue, size: 22),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F8E9),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(
+            icon,
+            color: const Color(0xFF4CAF50),
+            size: 26,
+          ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.black54,
-                  )),
-              const SizedBox(height: 3),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.black54,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
               Text(
                 value,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2E7D32),
+                ),
               ),
             ],
           ),
