@@ -1,6 +1,7 @@
+import 'package:KmerLingo/presentation/screens/language_setting_screen.dart';
+import 'package:flutter/material.dart';
 import 'package:KmerLingo/core/services/api_service.dart';
 import 'package:KmerLingo/presentation/screens/change_password_screen.dart';
-import 'package:flutter/material.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String userId;
@@ -44,7 +45,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: const Text("Mon Profil", style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
-
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : profile == null
@@ -155,6 +155,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               SizedBox(width: 10),
                               Text(
                                 "Changer le mot de passe",
+                                style: TextStyle(color: Colors.white, fontSize: 16),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 15),
+
+                      // ----------------- BOUTON CHANGE LANGUAGE -----------------
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green.shade600,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          onPressed: () async {
+                            // Redirige vers l'écran de changement de langue
+                            final currentLanguageId = profile?['language']?['id'] ?? '';
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => LanguageSettingsScreen(
+                                  userId: widget.userId,
+                                  currentLanguageId: currentLanguageId,
+                                ),
+                              ),
+                            );
+                          },
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.language, color: Colors.white),
+                              SizedBox(width: 10),
+                              Text(
+                                "Changer la langue",
                                 style: TextStyle(color: Colors.white, fontSize: 16),
                               ),
                             ],

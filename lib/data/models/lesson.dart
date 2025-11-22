@@ -6,6 +6,7 @@ class Lesson {
   String title;
   String objective;
   int order;
+  String languageId; // <-- Champ ajouté pour la langue maternelle
   List<Question> questions;
 
   Lesson({
@@ -14,6 +15,7 @@ class Lesson {
     required this.title,
     required this.objective,
     required this.order,
+    required this.languageId, // <-- ajouté
     required this.questions,
   });
 
@@ -24,6 +26,7 @@ class Lesson {
       title: json['title'],
       objective: json['objective'],
       order: json['order'],
+      languageId: json['languageId'] ?? 'default', // <-- récupère la langue depuis le JSON, 'default' si absent
       questions: json['questions'] != null
           ? (json['questions'] as List)
               .map((q) => Question.fromJson(q))
