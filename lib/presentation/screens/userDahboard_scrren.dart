@@ -447,7 +447,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           CircularProgressIndicator(color: Colors.orange.shade700),
           const SizedBox(height: 16),
           const Text(
-            "Chargement des statistiques...",
+            "Chargement des statistiques....",
             style: TextStyle(fontSize: 16),
           ),
         ],
