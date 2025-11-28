@@ -1,50 +1,82 @@
 import 'dart:convert';
+import 'package:KmerLingo/data/models/goal.dart';
+import 'package:KmerLingo/data/models/language.dart';
+import 'package:KmerLingo/data/models/notification.dart';
 import 'package:KmerLingo/data/models/question.dart';
+import 'package:KmerLingo/data/models/referral_source.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../data/models/language.dart';
-import '../../data/models/goal.dart';
-import '../../data/models/notification.dart';
-import '../../data/models/referral_source.dart';
 
 class ApiService {
-  final String baseUrl = "http://localhost:3000"; // Ton backend NestJS
+  final String baseUrl = "http://localhost:3000"; // Backend NestJS
 
-  /// 🔹 Récupère le token JWT stocké localement
-  
   /// 🔹 Récupère le token JWT stocké localement
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    print('💎 Token récupéré: $token'); // Debug
+    print('💎 Token récupéré: $token');
     return token;
   }
 
-  /// 🔹 Construit les headers avec le token si disponible
+  /// 🔹 Récupère la langue de l'utilisateur stockée localement
+  Future<String?> _getUserLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lang = prefs.getString('user_language');
+    print('🌐 Langue récupérée: $lang');
+    return lang;
+  }
+
+  /// 🔹 Met à jour la langue de l'utilisateur
+  Future<void> setUserLanguage(String langCode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_language', langCode);
+    print('✅ Langue stockée: $langCode');
+  }
+
+  /// 🔹 Construit les headers avec le token et la langue
   Future<Map<String, String>> _getHeaders({bool includeToken = true}) async {
     final headers = {"Content-Type": "application/json"};
-    final token = includeToken ? await _getToken() : null;
 
+    // Ajouter la langue
+    final userLanguage = await _getUserLanguage();
+    if (userLanguage != null) {
+      headers['Accept-Language'] = userLanguage;
+    } else {
+      print("⚠️ Langue introuvable, 'Accept-Language' non ajouté.");
+    }
+
+    // Ajouter le token
+    final token = includeToken ? await _getToken() : null;
     if (token != null) {
       headers['Authorization'] = 'Bearer $token';
     } else if (includeToken) {
-      print("⚠️ Aucun token trouvé. La requête peut échouer côté backend.");
+      print("⚠️ Aucun token trouvé.");
     }
 
-    print('📤 Headers envoyés: $headers'); // Debug
+    print('📤 Headers envoyés: $headers');
     return headers;
   }
-  Future<List<Question>> getQuestionsByLesson(String lessonId) async {
-    final url = Uri.parse('$baseUrl/question/lesson/$lessonId');
-    final response = await http.get(url, headers: await _getHeaders());
 
-    if (response.statusCode == 200) {
-      final List data = json.decode(response.body);
-      return data.map((json) => Question.fromJson(json)).toList();
-    } else {
-      throw Exception('Erreur lors de la récupération des questions: ${response.body}');
-    }
+// Exemple de getter pour récupérer la langue choisie par l'utilisateur
+
+ Future<List<Question>> getQuestionsByLesson(String lessonId) async {
+  final url = Uri.parse('$baseUrl/question/lesson/$lessonId');
+
+  // Envoi du token dans les headers pour que le backend récupère la langue
+  final response = await http.get(url, headers: await _getHeaders());
+
+  if (response.statusCode == 200) {
+    final List data = json.decode(response.body);
+    return data.map((json) => Question.fromJson(json)).toList();
+  } else if (response.statusCode == 400) {
+    // Cas où la langue de l'utilisateur est introuvable
+    throw Exception('La langue de l’utilisateur est introuvable');
+  } else {
+    throw Exception(
+        'Erreur lors de la récupération des questions: ${response.body}');
   }
+}
+
 
   /// 🔹 Récupérer une question par son ID
   Future<Question> getQuestionById(String questionId) async {
@@ -290,19 +322,6 @@ Future<void> submitFeedback({
       return json.decode(res.body);
     } else {
       throw Exception('Failed to fetch lessons: ${res.body}');
-    }
-  }
-
-  Future<List<dynamic>> fetchQuestions(String lessonId) async {
-    final res = await http.get(
-      Uri.parse('$baseUrl/questions/lesson/$lessonId'),
-      headers: await _getHeaders(),
-    );
-
-    if (res.statusCode == 200) {
-      return json.decode(res.body); // Contiendra les questions audio et texte
-    } else {
-      throw Exception('Failed to fetch questions: ${res.body}');
     }
   }
 
