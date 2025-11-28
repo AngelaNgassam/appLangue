@@ -1,16 +1,19 @@
 // lib/screens/login_screen.dart
 import 'package:KmerLingo/core/constants/colors.dart';
+
 import 'package:KmerLingo/core/services/api_service.dart';
 import 'package:KmerLingo/data/models/module.dart';
 import 'package:KmerLingo/presentation/screens/modules_screen.dart';
 import 'package:KmerLingo/presentation/screens/register_screen.dart';
 import 'package:KmerLingo/presentation/screens/success_screen.dart';
-import 'package:KmerLingo/presentation/screens/userDahboard_scrren.dart';
+import 'package:KmerLingo/presentation/screens/userDashboard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/repositories/auth_repository.dart';
 import 'dashboard_screen.dart';
-import 'language_screen.dart';
+import 'language_screen.dart'; 
+
+
 // Note: Assurez-vous d'importer RegisterScreen si vous voulez que le onTap du lien fonctionne directement, 
 // ou utilisez les routes nommées comme dans votre code original.
 // import 'register_screen.dart'; 

@@ -14,8 +14,9 @@ dependencies:
    # Pour lire des fichiers audio
   audioplayers: ^6.5.1  
   fl_chart: ^0.69.0
+  rive: ^0.13.0
 
-
+  flutter_staggered_animations: ^1.1.1
   # Pour enregistrer/traiter du son
   flutter_sound: ^9.2.13  
   
@@ -47,4 +48,5 @@ flutter:
     - assets/logo.png
     - assets/Loading_animation.json
     - assets/favorites.json
+    - assets/animal.riv
 
