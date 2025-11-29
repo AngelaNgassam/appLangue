@@ -312,18 +312,34 @@ Future<void> submitFeedback({
     }
   }
 
-  Future<List<dynamic>> fetchLessons(String chapterId) async {
-    final res = await http.get(
-      Uri.parse('$baseUrl/lessons/chapter/$chapterId'),
-      headers: await _getHeaders(),
-    );
+Future<List<dynamic>> fetchLessons(String chapterId) async {
+  final token = await _getToken();
 
-    if (res.statusCode == 200) {
-      return json.decode(res.body);
-    } else {
-      throw Exception('Failed to fetch lessons: ${res.body}');
-    }
+  if (token == null) {
+    throw Exception("No JWT token found. User not authenticated.");
   }
+
+  final url = Uri.parse('$baseUrl/lessons/chapter/$chapterId');
+
+  final res = await http.get(
+    url,
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token",
+    },
+  );
+
+  print('📡 [GET] $url');
+  print('📨 Status: ${res.statusCode}');
+  print('📄 Body: ${res.body}');
+
+  if (res.statusCode == 200) {
+    return json.decode(res.body);
+  } else {
+    throw Exception('❌ Failed to fetch lessons: ${res.body}');
+  }
+}
+
 
   Future<bool> submitAnswer({
     required String userId,
