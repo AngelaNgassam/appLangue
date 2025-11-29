@@ -19,11 +19,12 @@ class _QuestionScreenState extends State<QuestionScreen> {
   final ApiService apiService = ApiService();
   late Future<List<Question>> _questionsFuture;
 
-  // 🔊 AudioPlayers pour victoire/défaite
+  // 🔊 AudioPlayers
   final AudioPlayer _winPlayer = AudioPlayer();
   final AudioPlayer _losePlayer = AudioPlayer();
+  final AudioPlayer _questionAudioPlayer = AudioPlayer();
 
-  // 🔊 Text-to-Speech
+  // 🔊 TTS
   late FlutterTts _flutterTts;
 
   int _currentIndex = 0;
@@ -32,12 +33,12 @@ class _QuestionScreenState extends State<QuestionScreen> {
   late TextEditingController _answerController;
   List<String> _correctAnswers = [];
 
-  // ✅ booléen pour savoir si la question a déjà été lue
   bool _hasSpoken = false;
 
   @override
   void initState() {
     super.initState();
+    print("📌 initState called for lesson id: ${widget.lesson.id}");
     _questionsFuture = apiService.getQuestionsByLesson(widget.lesson.id);
     _answerController = TextEditingController();
     _preloadSounds();
@@ -46,55 +47,81 @@ class _QuestionScreenState extends State<QuestionScreen> {
     _flutterTts.setLanguage("fr-FR");
     _flutterTts.setSpeechRate(0.9);
     _flutterTts.setPitch(1.0);
+    print("🎤 TTS initialized");
   }
 
   Future<void> _preloadSounds() async {
     try {
+      print("🔊 Preloading win/lose sounds...");
       await _winPlayer.setSource(AssetSource("win_question.mp3"));
       await _losePlayer.setSource(AssetSource("lost.mp3"));
+      print("✅ Sounds preloaded successfully");
     } catch (e) {
-      print("Erreur préchargement audio: $e");
+      print("❌ Error preloading sounds: $e");
     }
   }
 
   @override
   void dispose() {
+    print("🧹 Disposing resources...");
     _answerController.dispose();
     _winPlayer.dispose();
     _losePlayer.dispose();
+    _questionAudioPlayer.dispose();
     _flutterTts.stop();
     super.dispose();
   }
 
-  // 🔊 Jouer le son victoire/défaite
   Future<void> _playSound(bool isCorrect) async {
     try {
+      print("🔊 Playing sound, isCorrect: $isCorrect");
       final player = isCorrect ? _winPlayer : _losePlayer;
       await player.stop();
       await player.play(AssetSource(isCorrect ? "win_question.mp3" : "lost.mp3"));
+      print("✅ Sound played successfully");
     } catch (e) {
-      print("Erreur audio: $e");
+      print("❌ Error playing sound: $e");
     }
   }
 
-  // 🔊 Lire le texte en français
   Future<void> _speakText(String text) async {
     try {
+      print("🗣️ Speaking text via TTS: $text");
       await _flutterTts.stop();
       await _flutterTts.speak(text);
+      print("✅ TTS done");
     } catch (e) {
-      print("Erreur TTS: $e");
+      print("❌ Error in TTS: $e");
+    }
+  }
+
+  Future<void> _playQuestionAudio(Question question) async {
+    try {
+      print("🎧 Attempting to play question audio: ${question.audioPath}");
+      if (question.audioPath != null && question.audioPath!.isNotEmpty) {
+        final url = "http://localhost:3000/${question.audioPath}";
+        print("🔗 Audio URL: $url");
+        await _questionAudioPlayer.stop();
+        await _questionAudioPlayer.play(UrlSource(url));
+        print("✅ Audio played successfully from URL");
+      } else {
+        print("ℹ️ No audioPath found, falling back to TTS");
+        await _speakText(question.text);
+      }
+    } catch (e) {
+      print("❌ Error playing question audio: $e");
     }
   }
 
   void _nextQuestion() {
+    print("➡️ Moving to next question");
     setState(() {
       _currentIndex++;
       _selectedChoice = null;
       _isCorrect = null;
       _correctAnswers = [];
       _answerController.clear();
-      _hasSpoken = false; // ✅ réinitialiser pour la prochaine question
+      _hasSpoken = false;
     });
   }
 
@@ -103,10 +130,15 @@ class _QuestionScreenState extends State<QuestionScreen> {
         ? _selectedChoice
         : _answerController.text.trim();
 
-    if (answerToSend == null || answerToSend.isEmpty) return;
+    print("📝 Submitting answer: $answerToSend for question id: ${question.id}");
+    if (answerToSend == null || answerToSend.isEmpty) {
+      print("⚠️ Answer is empty, skipping submission");
+      return;
+    }
 
     try {
       final result = await apiService.checkAnswer(question.id, answerToSend);
+      print("📡 API result: $result");
 
       List<String> correctAnswersFromApi = [];
       if (result['correctAnswers'] != null && result['correctAnswers'] is List) {
@@ -119,10 +151,11 @@ class _QuestionScreenState extends State<QuestionScreen> {
         _correctAnswers = correctAnswersFromApi;
       });
 
-      // 🔊 Jouer le son après setState
-      _playSound(_isCorrect!);
+      print("✅ Answer processed, isCorrect: $_isCorrect, correctAnswers: $_correctAnswers");
+
+      await _playSound(_isCorrect!);
     } catch (e) {
-      print("❌ Erreur: $e");
+      print("❌ Error submitting answer: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Erreur lors de la validation")),
       );
@@ -149,6 +182,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
         return GestureDetector(
           onTap: _isCorrect == null
               ? () {
+                  print("✅ Choice selected: $answerText");
                   setState(() {
                     _selectedChoice = answerText;
                   });
@@ -175,6 +209,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print("📱 Building QuestionScreen widget");
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green.shade600,
@@ -183,16 +218,23 @@ class _QuestionScreenState extends State<QuestionScreen> {
       body: FutureBuilder<List<Question>>(
         future: _questionsFuture,
         builder: (context, snapshot) {
+          print("📡 FutureBuilder snapshot: connectionState=${snapshot.connectionState}");
           if (snapshot.connectionState == ConnectionState.waiting) {
+            print("⏳ Waiting for questions...");
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
+            print("❌ FutureBuilder error: ${snapshot.error}");
             return Center(child: Text("Erreur: ${snapshot.error}"));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            print("⚠️ No questions found");
             return const Center(child: Text('Aucune question.'));
           }
 
           final questions = snapshot.data!;
+          print("✅ Questions fetched: ${questions.length}");
+
           if (_currentIndex >= questions.length) {
+            print("🎉 Lesson finished");
             return const Center(
               child: Text(
                 "🎉 Leçon terminée !",
@@ -202,12 +244,13 @@ class _QuestionScreenState extends State<QuestionScreen> {
           }
 
           final question = questions[_currentIndex];
+          print("📖 Current question index: $_currentIndex, id: ${question.id}");
 
-          // 🔊 Lire automatiquement le texte une seule fois
           if (!_hasSpoken) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              _speakText(question.text);
-              _hasSpoken = true; // ✅ marquer comme lu
+              print("🔊 Playing audio/TTS for question index $_currentIndex");
+              _playQuestionAudio(question);
+              _hasSpoken = true;
             });
           }
 
@@ -232,7 +275,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.volume_up, color: Colors.green),
-                      onPressed: () => _speakText(question.text),
+                      onPressed: () => _playQuestionAudio(question),
                     ),
                   ],
                 ),
