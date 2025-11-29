@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 import '../../data/models/lesson.dart';
 import '../../data/models/question.dart';
@@ -18,9 +19,12 @@ class _QuestionScreenState extends State<QuestionScreen> {
   final ApiService apiService = ApiService();
   late Future<List<Question>> _questionsFuture;
 
-  // 🔊 AudioPlayers séparés
+  // 🔊 AudioPlayers pour victoire/défaite
   final AudioPlayer _winPlayer = AudioPlayer();
   final AudioPlayer _losePlayer = AudioPlayer();
+
+  // 🔊 Text-to-Speech
+  late FlutterTts _flutterTts;
 
   int _currentIndex = 0;
   bool? _isCorrect;
@@ -28,12 +32,20 @@ class _QuestionScreenState extends State<QuestionScreen> {
   late TextEditingController _answerController;
   List<String> _correctAnswers = [];
 
+  // ✅ booléen pour savoir si la question a déjà été lue
+  bool _hasSpoken = false;
+
   @override
   void initState() {
     super.initState();
     _questionsFuture = apiService.getQuestionsByLesson(widget.lesson.id);
     _answerController = TextEditingController();
     _preloadSounds();
+
+    _flutterTts = FlutterTts();
+    _flutterTts.setLanguage("fr-FR");
+    _flutterTts.setSpeechRate(0.9);
+    _flutterTts.setPitch(1.0);
   }
 
   Future<void> _preloadSounds() async {
@@ -50,17 +62,28 @@ class _QuestionScreenState extends State<QuestionScreen> {
     _answerController.dispose();
     _winPlayer.dispose();
     _losePlayer.dispose();
+    _flutterTts.stop();
     super.dispose();
   }
 
-  // 🔊 Jouer le son selon correct / incorrect
+  // 🔊 Jouer le son victoire/défaite
   Future<void> _playSound(bool isCorrect) async {
     try {
       final player = isCorrect ? _winPlayer : _losePlayer;
-      await player.stop(); // stopper si déjà en lecture
+      await player.stop();
       await player.play(AssetSource(isCorrect ? "win_question.mp3" : "lost.mp3"));
     } catch (e) {
       print("Erreur audio: $e");
+    }
+  }
+
+  // 🔊 Lire le texte en français
+  Future<void> _speakText(String text) async {
+    try {
+      await _flutterTts.stop();
+      await _flutterTts.speak(text);
+    } catch (e) {
+      print("Erreur TTS: $e");
     }
   }
 
@@ -71,6 +94,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
       _isCorrect = null;
       _correctAnswers = [];
       _answerController.clear();
+      _hasSpoken = false; // ✅ réinitialiser pour la prochaine question
     });
   }
 
@@ -179,6 +203,14 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
           final question = questions[_currentIndex];
 
+          // 🔊 Lire automatiquement le texte une seule fois
+          if (!_hasSpoken) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _speakText(question.text);
+              _hasSpoken = true; // ✅ marquer comme lu
+            });
+          }
+
           return Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -190,9 +222,19 @@ class _QuestionScreenState extends State<QuestionScreen> {
                       fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20),
-                Text(
-                  question.text,
-                  style: const TextStyle(fontSize: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        question.text,
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.volume_up, color: Colors.green),
+                      onPressed: () => _speakText(question.text),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 25),
                 if (question.type == QuestionType.MULTIPLE_CHOICE)
