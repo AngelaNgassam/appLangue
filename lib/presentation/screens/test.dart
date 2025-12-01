@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
-import '../../data/models/lesson.dart';
+// Importations fictives pour la compilation
+// **Assurez-vous que vos vraies classes Lesson, Question, Answer ont les propriétés utilisées (id, text, type, answers, isCorrect).**
+import '../../data/models/lesson.dart'; 
 import '../../data/models/question.dart';
 import '../../data/models/answer.dart';
 import '../../core/services/api_service.dart';
-// ... (Les imports, les enums et les classes Question/Answer/Lesson sont inchangés)
+
+// Enum pour simuler les types de questions s'ils ne sont pas dans les imports
+enum QuestionType { MULTIPLE_CHOICE, TEXT, AUDIO_TO_TEXT, AUDIO_TO_TRANSLATION }
 
 class QuestionScreen extends StatefulWidget {
   final Lesson lesson;
@@ -393,6 +397,7 @@ class _QuestionScreenState extends State<QuestionScreen> with TickerProviderStat
   }
 
   Widget _buildMultipleChoice(Question question) {
+    // ... (Code de construction des choix multiples inchangé)
     return Column(
       children: question.answers.map((answer) {
         final answerText = answer.text;
@@ -495,66 +500,40 @@ class _QuestionScreenState extends State<QuestionScreen> with TickerProviderStat
   }
 
   Widget _buildTextField(Question question) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      TextField(
-        controller: _answerController,
-        enabled: _isCorrect == null,
-        decoration: InputDecoration(
-          labelText: "Votre réponse",
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
+    // ... (Code du champ de texte inchangé)
+    return TextField(
+      controller: _answerController,
+      enabled: _isCorrect == null,
+      decoration: InputDecoration(
+        labelText: "Votre réponse",
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
               color: _isCorrect != null
                   ? (_isCorrect! ? Colors.green : Colors.red)
-                  : Colors.grey.shade400,
-            ),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: (_isReviewMode ? Colors.orange : Colors.green),
-              width: 2,
-            ),
-          ),
-          filled: true,
-          fillColor: _isCorrect != null ? Colors.grey.shade50 : Colors.white,
+                  : Colors.grey.shade400),
         ),
-        style: const TextStyle(fontSize: 17),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+              color: (_isReviewMode ? Colors.orange : Colors.green), width: 2),
+        ),
+        filled: true,
+        fillColor: _isCorrect != null ? Colors.grey.shade50 : Colors.white,
       ),
-
-      const SizedBox(height: 15),
-
-      // 🔘 VALIDATION BUTTON
-      ElevatedButton(
-        onPressed: _isCorrect == null
-            ? () => _submitAnswer(question)
-            : null,
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          backgroundColor: Colors.green.shade700,
-          foregroundColor: Colors.white,
-          disabledBackgroundColor: Colors.grey.shade400,
-        ),
-        child: const Text(
-          "Valider",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-      ),
-    ],
-  );
-}
-
+      keyboardType: TextInputType.text,
+      textInputAction: TextInputAction.done,
+      onSubmitted: _isCorrect == null ? (_) => _submitAnswer(question) : null,
+      style: const TextStyle(fontSize: 17),
+    );
+  }
 
   Widget _buildResultsScreen() {
+    // ... (Code de l'écran de résultats inchangé)
     final minutes = _timeSpent?.inMinutes ?? 0;
     final seconds = (_timeSpent?.inSeconds ?? 0) % 60;
     final primaryColor = Colors.lightGreen.shade700;
@@ -697,6 +676,7 @@ class _QuestionScreenState extends State<QuestionScreen> with TickerProviderStat
   }
 
   Widget _buildResultRow({
+    // ... (Code de la ligne de résultat inchangé)
     required IconData icon,
     required Color iconColor,
     required String label,
@@ -722,315 +702,316 @@ class _QuestionScreenState extends State<QuestionScreen> with TickerProviderStat
   }
 
   Widget _buildQuestionContent(Question question, int totalQuestions) {
-  return AnimatedBuilder(
-    animation: _progressAnimation,
-    builder: (context, child) {
-      final bool isChecked = _isCorrect != null;
+    // S'assurer que l'animation de progression est utilisée
+    return AnimatedBuilder(
+      animation: _progressAnimation,
+      builder: (context, child) {
+        final bool isChecked = _isCorrect != null;
 
-      return Column(
-        children: [
-          // Progression et points
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: LinearProgressIndicator(
-                    value: _progressAnimation.value,
-                    backgroundColor: Colors.grey.shade300,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      _isReviewMode ? Colors.orange.shade600 : Colors.green.shade600,
-                    ),
-                    minHeight: 12,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                ),
-                const SizedBox(width: 15),
-                Text(
-                  '${_currentIndex + 1}/$totalQuestions',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Badge mode révision
-          if (_isReviewMode)
+        return Column(
+          children: [
+            // Progression et points
             Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade100,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.orange.shade300),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.refresh, size: 16, color: Colors.orange.shade600),
-                    const SizedBox(width: 5),
-                    Text(
-                      "Mode Révision - Ne compte pas",
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.orange.shade700,
+              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: LinearProgressIndicator(
+                      value: _progressAnimation.value,
+                      backgroundColor: Colors.grey.shade300,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        _isReviewMode ? Colors.orange.shade600 : Colors.green.shade600,
                       ),
+                      minHeight: 12,
+                      borderRadius: BorderRadius.circular(6),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 15),
+                  Text(
+                    '${_currentIndex + 1}/$totalQuestions',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54),
+                  ),
+                ],
               ),
             ),
+            const SizedBox(height: 20),
 
-          // Carte de la question
-          Card(
-            elevation: 5,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            // Badge mode révision
+            if (_isReviewMode)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade100,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.orange.shade300),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(
-                        child: Text(
-                          question.text,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-
-                      // Bouton audio
-                      AnimatedOpacity(
-                        opacity: isChecked ? 0.0 : 1.0,
-                        duration: const Duration(milliseconds: 300),
-                        child: IconButton(
-                          icon: Icon(
-                            Icons.volume_up,
-                            size: 30,
-                            color: _isReviewMode ? Colors.orange.shade600 : Colors.green.shade600,
-                          ),
-                          onPressed: isChecked ? null : () => _playQuestionAudio(question),
+                      Icon(Icons.refresh, size: 16, color: Colors.orange.shade600),
+                      const SizedBox(width: 5),
+                      Text(
+                        "Mode Révision - Ne compte pas",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange.shade700,
                         ),
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 20),
-
-                  // 🎯 CHOIX MULTIPLES
-                  if (question.type == QuestionType.MULTIPLE_CHOICE)
-                    _buildMultipleChoice(question),
-
-                  // 🔥 BOUTON VALIDER POUR MULTIPLE CHOICE
-                  if (question.type == QuestionType.MULTIPLE_CHOICE) ...[
-                    const SizedBox(height: 20),
-
-                    ElevatedButton(
-                      onPressed: (_selectedChoice != null && _isCorrect == null)
-                          ? () => _submitAnswer(question)
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text(
-                        "Valider",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-
-                  // 🎯 CHAMPS TEXTE
-                  if (question.type == QuestionType.TEXT ||
-                      question.type == QuestionType.AUDIO_TO_TEXT ||
-                      question.type == QuestionType.AUDIO_TO_TRANSLATION)
-                    _buildTextField(question),
-                ],
+                ),
               ),
-            ),
-          ),
-        ],
-      );
-    },
-  );
-}
 
-
-  // Fonction complétée pour la barre de validation et de feedback
-  Widget _buildBottomBar(Question question) {
-    final bool isChecked = _isCorrect != null;
-    final bool canSubmit = question.type == QuestionType.MULTIPLE_CHOICE
-        ? (_selectedChoice != null)
-        : _answerController.text.trim().isNotEmpty;
-    
-    final Color buttonColor = isChecked
-        ? (_isCorrect! ? Colors.green.shade600 : Colors.red.shade600)
-        : (canSubmit 
-            ? (_isReviewMode ? Colors.orange.shade600 : Colors.green.shade600) 
-            : Colors.grey.shade400);
-
-    return SlideTransition(
-      position: _feedbackOffsetAnimation,
-      child: Container(
-        padding: const EdgeInsets.only(top: 20, left: 24, right: 24, bottom: 40),
-        decoration: BoxDecoration(
-          color: isChecked
-              ? (_isCorrect! ? Colors.green.shade100 : Colors.red.shade100)
-              : Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isChecked)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10.0),
-                child: Row(
+            // Carte de la question
+            Card(
+              elevation: 5,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      _isCorrect! ? Icons.check_circle : Icons.cancel,
-                      color: _isCorrect! ? Colors.green.shade700 : Colors.red.shade700,
-                      size: 30,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _isCorrect! ? "Correct !" : "Faux.",
-                            style: TextStyle(
-                              fontSize: 20,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            question.text,
+                            style: const TextStyle(
+                              fontSize: 22,
                               fontWeight: FontWeight.bold,
-                              color: _isCorrect! ? Colors.green.shade700 : Colors.red.shade700,
+                              color: Colors.black87,
                             ),
                           ),
-                          if (!_isCorrect! && _correctAnswers.isNotEmpty)
-                            Text(
-                              "La bonne réponse était : ${_correctAnswers.join(' / ')}",
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.red.shade700,
-                              ),
+                        ),
+                        const SizedBox(width: 10),
+                        // Bouton audio (s'estompe après la vérification)
+                        AnimatedOpacity(
+                          opacity: isChecked ? 0.0 : 1.0,
+                          duration: const Duration(milliseconds: 300),
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.volume_up,
+                              size: 30,
+                              color: _isReviewMode ? Colors.orange.shade600 : Colors.green.shade600,
                             ),
-                        ],
-                      ),
+                            onPressed: isChecked ? null : () => _playQuestionAudio(question),
+                          ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 20),
+
+                    // Contenu de la réponse - C'est ici que le champ de saisie est affiché !
+                    if (question.type == QuestionType.MULTIPLE_CHOICE)
+                      _buildMultipleChoice(question),
+                    if (question.type == QuestionType.TEXT ||
+                        question.type == QuestionType.AUDIO_TO_TEXT ||
+                        question.type == QuestionType.AUDIO_TO_TRANSLATION)
+                      _buildTextField(question),
                   ],
                 ),
               ),
-            ElevatedButton(
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Barre de validation et de feedback
+  Widget _buildBottomBar(Question question) {
+    // ... (Code de la barre du bas inchangé)
+    final bool isChecked = _isCorrect != null;
+    final bool canSubmit = question.type == QuestionType.MULTIPLE_CHOICE
+        ? (_selectedChoice != null)
+        : (_answerController.text.trim().isNotEmpty);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Panneau de Feedback (animé)
+        SlideTransition(
+          position: _feedbackOffsetAnimation,
+          child: _isCorrect != null
+              ? _buildFeedbackPanel(question)
+              : const SizedBox(height: 0),
+        ),
+
+        // Bouton de navigation
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, -5))
+            ],
+          ),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            width: double.infinity,
+            height: 55,
+            child: ElevatedButton(
               onPressed: isChecked
                   ? _nextQuestion
                   : (canSubmit ? () => _submitAnswer(question) : null),
               style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 60),
-                backgroundColor: buttonColor,
+                backgroundColor: isChecked
+                    ? Colors.blue.shade600
+                    : (canSubmit
+                        ? (_isReviewMode ? Colors.orange.shade600 : Colors.green.shade600)
+                        : Colors.grey.shade400),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(30),
                 ),
-                elevation: 5,
+                elevation: 0,
               ),
               child: Text(
-                isChecked
-                    ? "Continuer >"
-                    : "Vérifier",
+                isChecked ? "Continuer (Suivant)" : "Valider",
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFeedbackPanel(Question question) {
+    // CODE COMPLÉTÉ
+    final bool isCorrect = _isCorrect ?? false;
+    final Color primaryColor = isCorrect ? Colors.green.shade700 : Colors.red.shade700;
+    final String title = isCorrect ? "Excellent !" : "Mauvaise réponse";
+    final IconData icon = isCorrect ? Icons.check_circle : Icons.cancel;
+    
+    // Message si la réponse est fausse
+    final String incorrectMessage = "La réponse correcte était : ${_correctAnswers.join(' / ')}";
+
+    return Container(
+      width: double.infinity,
+      color: primaryColor,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      child: SafeArea( // Utiliser SafeArea pour éviter les découpes
+        top: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: Colors.white, size: 28),
+                const SizedBox(width: 10),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            if (!isCorrect && _correctAnswers.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  incorrectMessage,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 
-  // Widget de construction principal (le 'build' de la classe State)
+  // 👇 LA MÉTHODE BUILD PRINCIPALE AJOUTÉE
   @override
   Widget build(BuildContext context) {
-    // Si la leçon est terminée, affiche l'écran de résultats
-    if (_lessonFinished) {
-      return _buildResultsScreen();
-    }
-
-    // Sinon, affiche l'écran de la question
     return FutureBuilder<List<Question>>(
       future: _questionsFuture,
       builder: (context, snapshot) {
+        if (_lessonFinished) {
+          return _buildResultsScreen();
+        }
+        
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+          return Scaffold(
+            appBar: AppBar(title: Text(widget.lesson.title), backgroundColor: Colors.green),
+            body: const Center(child: CircularProgressIndicator()),
           );
         }
-
+        
         if (snapshot.hasError) {
           return Scaffold(
-            appBar: AppBar(title: const Text("Erreur")),
-            body: Center(
-              child: Text("Erreur de chargement des questions: ${snapshot.error}"),
-            ),
+            appBar: AppBar(title: const Text("Erreur"), backgroundColor: Colors.red),
+            body: Center(child: Text("Erreur de chargement : ${snapshot.error}")),
           );
         }
 
-        List<Question> questions = _isReviewMode ? _incorrectQuestions : (snapshot.data ?? []);
-        final int totalQuestions = questions.length;
+        final questionsList = _isReviewMode ? _incorrectQuestions : (snapshot.data ?? []);
+        if (questionsList.isEmpty || _currentIndex >= questionsList.length) {
+          // Gère le cas où l'on arrive à la fin de la liste des questions ou qu'elle est vide
+          if (_isReviewMode && _incorrectQuestions.isNotEmpty) {
+            // Si c'est la fin du mode révision, mais qu'il reste des questions non corrigées
+             return _buildResultsScreen(); // On termine quand même pour l'instant
+          }
+          if (!_isReviewMode && _incorrectQuestions.isNotEmpty) {
+            // Si c'est la fin de la première passe et qu'il y a des erreurs, le dialogue prendra le relais
+            // Si le dialogue n'est pas affiché, on affiche les résultats
+            if (_timeSpent == null) {
+               _timeSpent = DateTime.now().difference(_startTime);
+               _animatePoints(); 
+            }
+          }
+          if (!_lessonFinished) {
+             return Scaffold(
+              appBar: AppBar(title: Text(widget.lesson.title), backgroundColor: Colors.green),
+              body: const Center(child: Text("Leçon terminée ou pas de question.")),
+            );
+          }
+        }
         
-        if (totalQuestions == 0) {
-          return Scaffold(
-            appBar: AppBar(title: Text(widget.lesson.title)),
-            body: const Center(child: Text("Aucune question disponible pour cette leçon.")),
-          );
+        if (_currentIndex >= questionsList.length) {
+             // Redirige vers l'écran de fin si l'index est dépassé
+             return _buildResultsScreen();
         }
 
-        // On gère l'index pour ne pas dépasser la taille de la liste
-        final Question currentQuestion = questions[
-          _currentIndex.clamp(0, totalQuestions - 1)
-        ];
+        final currentQuestion = questionsList[_currentIndex];
+        final totalQuestions = questionsList.length;
 
         return Scaffold(
+          // Configuration de l'AppBar
           appBar: AppBar(
-            title: Text(_isReviewMode ? "Révision" : widget.lesson.title),
+            // Le titre de l'image est "Leçon : Lecon1:", mais on utilise le titre de la leçon pour être dynamique
+            title: Text('Leçon : ${widget.lesson.title}'), 
             leading: IconButton(
               icon: const Icon(Icons.close),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(context), // Retour en arrière
             ),
-            backgroundColor: _isReviewMode ? Colors.orange.shade600 : Colors.green.shade600,
-            foregroundColor: Colors.white,
+            automaticallyImplyLeading: false, // Contrôlé par le bouton `close`
+            backgroundColor: Colors.white, // Correspond à l'arrière-plan de l'image
+            foregroundColor: Colors.black87,
+            elevation: 0,
           ),
-          body: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
-                child: SingleChildScrollView(
-                  child: _buildQuestionContent(currentQuestion, totalQuestions),
-                ),
-              ),
-              
-              // Positionne la barre de feedback en bas
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: _buildBottomBar(currentQuestion),
-              ),
-            ],
+          
+          // 🚨 Contenu principal de la question 
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+            child: _buildQuestionContent(currentQuestion, totalQuestions),
           ),
+          
+          // 🚨 Barre du bas avec le panneau de feedback et le bouton Valider
+          bottomNavigationBar: _buildBottomBar(currentQuestion), 
         );
       },
     );

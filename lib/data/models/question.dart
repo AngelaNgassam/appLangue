@@ -8,7 +8,9 @@ enum QuestionType {
 }
 
 QuestionType questionTypeFromString(String value) {
-  switch (value) {
+  // Conversion en majuscules pour la vérification
+  final upperValue = value.toUpperCase(); 
+  switch (upperValue) {
     case "TEXT":
       return QuestionType.TEXT;
     case "MULTIPLE_CHOICE":
@@ -16,9 +18,12 @@ QuestionType questionTypeFromString(String value) {
     case "AUDIO_TO_TEXT":
       return QuestionType.AUDIO_TO_TEXT;
     case "AUDIO_TO_TRANSLATION":
-      return QuestionType.AUDIO_TO_TRANSLATION;
+      return QuestionType.AUDIO_TO_TRANSLATION;     
     default:
-      return QuestionType.TEXT;
+      // Si le type est inconnu, supposez TEXT, ou mieux, MULTIPLE_CHOICE
+      // si cela mène à moins de bugs visuels.
+      // Je garde TEXT ici pour correspondre à votre défaut initial:
+      return QuestionType.TEXT; 
   }
 }
 
