@@ -270,11 +270,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
       duration: const Duration(milliseconds: 800),
     );
 
-    // On lance l’animation après la frame initiale pour éviter l’erreur
+    // Lance l’animation après la frame initiale
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _animationController.forward();
-      }
+      if (mounted) _animationController.forward();
     });
   }
 
@@ -377,7 +375,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     );
   }
 
-  /// Carte Statistique avec animation FadeTransition
+  /// Carte statistique avec animation FadeTransition
   Widget _buildStatCard({
     required String title,
     required String value,
@@ -385,14 +383,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     required Color color,
     required int index,
   }) {
-    // Chaque carte a un intervalle différent pour un effet “staggered”
     final animation = CurvedAnimation(
       parent: _animationController,
-      curve: Interval(
-        index * 0.1,
-        1.0,
-        curve: Curves.easeOut,
-      ),
+      curve: Interval(index * 0.1, 1.0, curve: Curves.easeOut),
     );
 
     return FadeTransition(
@@ -421,9 +414,10 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     );
   }
 
+  /// Statistiques par langue
   List<Widget> _buildLanguageStats(Map<String, dynamic> languages) {
     List<Widget> widgets = [];
-    int i = 6; // Commence après les premières cartes
+    int i = 6; // Commence après les cartes principales
     languages.forEach((lang, data) {
       widgets.add(
         _buildStatCard(
@@ -439,6 +433,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     return widgets;
   }
 
+  /// Widget de chargement
   Widget _buildLoading() {
     return Center(
       child: Column(
@@ -447,7 +442,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           CircularProgressIndicator(color: Colors.orange.shade700),
           const SizedBox(height: 16),
           const Text(
-            "Chargement des statistiques....",
+            "Chargement des statistiques...",
             style: TextStyle(fontSize: 16),
           ),
         ],
