@@ -5,11 +5,12 @@ enum QuestionType {
   MULTIPLE_CHOICE,
   AUDIO_TO_TEXT,
   AUDIO_TO_TRANSLATION,
+  VOICE_TO_TEXT,
+  WORD_BUILDER, // 👈 NOUVEAU TYPE
 }
 
 QuestionType questionTypeFromString(String value) {
-  // Conversion en majuscules pour la vérification
-  final upperValue = value.toUpperCase(); 
+  final upperValue = value.toUpperCase();
   switch (upperValue) {
     case "TEXT":
       return QuestionType.TEXT;
@@ -18,12 +19,13 @@ QuestionType questionTypeFromString(String value) {
     case "AUDIO_TO_TEXT":
       return QuestionType.AUDIO_TO_TEXT;
     case "AUDIO_TO_TRANSLATION":
-      return QuestionType.AUDIO_TO_TRANSLATION;     
+      return QuestionType.AUDIO_TO_TRANSLATION;
+    case "VOICE_TO_TEXT":
+      return QuestionType.VOICE_TO_TEXT;
+    case "WORD_BUILDER": // 👈 NOUVEAU
+      return QuestionType.WORD_BUILDER;
     default:
-      // Si le type est inconnu, supposez TEXT, ou mieux, MULTIPLE_CHOICE
-      // si cela mène à moins de bugs visuels.
-      // Je garde TEXT ici pour correspondre à votre défaut initial:
-      return QuestionType.TEXT; 
+      return QuestionType.TEXT;
   }
 }
 
@@ -39,7 +41,7 @@ class Question {
   String? audioPath;
   String? imagePath;
   int order;
-  QuestionType type; // <-- enum
+  QuestionType type;
   List<Answer> answers;
 
   Question({
@@ -63,7 +65,7 @@ class Question {
       audioPath: json['audioPath'],
       imagePath: json['imagePath'],
       order: json['order'],
-      type: questionTypeFromString(json['type']), // <-- conversion automatique
+      type: questionTypeFromString(json['type']),
       answers: json['answers'] != null
           ? (json['answers'] as List)
               .map((a) => Answer.fromJson(a))
@@ -81,7 +83,7 @@ class Question {
       'audioPath': audioPath,
       'imagePath': imagePath,
       'order': order,
-      'type': questionTypeToString(type), // <-- conversion enum → String
+      'type': questionTypeToString(type),
       'answers': answers.map((a) => a.toJson()).toList(),
     };
   }

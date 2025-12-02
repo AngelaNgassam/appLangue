@@ -8,7 +8,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  final String baseUrl = "http://localhost:3000"; // Backend NestJS
+  final String baseUrl = "http://10.166.4.172:3000"; // Backend NestJS
+  // final String baseUrl = "http://localhost:3000"; // Backend NestJS
 
   /// 🔹 Récupère le token JWT stocké localement
   Future<String?> _getToken() async {

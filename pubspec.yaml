@@ -1,7 +1,7 @@
 name: KmerLingo
 description: "A new Flutter project."
 
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: 'none'
 
 version: 1.0.0+1
 
@@ -11,26 +11,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-   # Pour lire des fichiers audio
   audioplayers: ^6.5.1  
   fl_chart: ^0.69.0
   flutter_tts: ^4.2.0
-
-
-
-  # Pour enregistrer/traiter du son
-  flutter_sound: ^9.2.13  
-  
-
-  # Pour accéder aux chemins du stockage local
-  path_provider: ^2.0.16  
-
-  # Pour demander les permissions (micro, stockage, etc.)
-  permission_handler: ^11.3.1  
-
-  
-
-
+  speech_to_text: ^7.3.0
+  permission_handler: ^12.0.1
+  flutter_sound: ^9.2.13
+  path_provider: ^2.0.16
   cupertino_icons: ^1.0.8
   http: ^1.5.0
   shared_preferences: ^2.5.3
@@ -41,15 +28,14 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   lottie: ^2.2.0
 
-
 flutter:
-
   uses-material-design: true
+
   assets:
     - assets/logo.png
+    - assets/loading.json
     - assets/Loading_animation.json
     - assets/win_question.mp3
     - assets/lost.mp3
     - assets/achievement.mp3
-
-
+    - assets/christ.mp3
