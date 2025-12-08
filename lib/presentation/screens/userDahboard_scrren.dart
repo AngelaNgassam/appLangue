@@ -5,6 +5,7 @@ import 'package:KmerLingo/presentation/screens/modules_screen.dart';
 import 'package:KmerLingo/presentation/screens/notification_screen.dart';
 import 'package:KmerLingo/presentation/screens/profile_screen.dart';
 import 'package:KmerLingo/presentation/screens/rankingScreen.dart';
+import 'package:KmerLingo/presentation/screens/users_list_screen.dart';
 
 class MainScreen extends StatefulWidget {
   final String userId;
@@ -24,10 +25,10 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUnreadCount(); // Charger le nombre de notifications non lues au démarrage
+    _loadUnreadCount(); // Charger le nombre de notifications non lues
 
     _screens = [
-      HomeScreen(),
+      HomeScreen(userId: widget.userId),
       DivisionLeaderboardPage(userId: widget.userId),
       StatisticsScreen(userId: widget.userId),
       ModuleScreen(),
@@ -35,13 +36,15 @@ class _MainScreenState extends State<MainScreen> {
       FeedbackScreen(userId: widget.userId),
       NotificationScreen(
         userId: widget.userId,
-        onReadChanged: () => _loadUnreadCount(),
+        onReadChanged: _loadUnreadCount,
       ),
+      UsersListScreen(userId: widget.userId),
     ];
   }
 
   Future<void> _loadUnreadCount() async {
     final notifications = await api.fetchNotifications(widget.userId);
+    if (!mounted) return;
     setState(() {
       unreadCount = notifications.where((n) => !n.isRead).length;
     });
@@ -67,6 +70,7 @@ class _MainScreenState extends State<MainScreen> {
               icon: Icon(Icons.menu_book_rounded), label: 'Cours'),
           const BottomNavigationBarItem(
               icon: Icon(Icons.person_rounded), label: 'Profile'),
+         
           const BottomNavigationBarItem(
               icon: Icon(Icons.feedback_rounded), label: 'Feedback'),
           BottomNavigationBarItem(
@@ -88,9 +92,10 @@ class _MainScreenState extends State<MainScreen> {
                       child: Text(
                         '$unreadCount',
                         style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold),
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -99,6 +104,8 @@ class _MainScreenState extends State<MainScreen> {
             ),
             label: 'Notifications',
           ),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.group_rounded), label: 'Users'),
         ],
         onTap: (index) {
           setState(() {
@@ -111,134 +118,186 @@ class _MainScreenState extends State<MainScreen> {
 }
 
 /// ---------------- HOME SCREEN ----------------
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class HomeScreen extends StatefulWidget {
+  final String userId;
+  const HomeScreen({Key? key, required this.userId}) : super(key: key);
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int currentStreak = 0;
+  int maxStreak = 0;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserStreak();
+  }
+
+  Future<void> _fetchUserStreak() async {
+    try {
+      final streakData = await ApiService().getUserStreak(widget.userId);
+      if (!mounted) return;
+      setState(() {
+        currentStreak = streakData['currentStreak'] ?? 0;
+        maxStreak = streakData['maxStreak'] ?? 0;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('❌ Erreur lors de la récupération du streak: $e');
+      if (!mounted) return;
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        padding: const EdgeInsets.all(25),
-        width: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.blue.shade800,
-              Colors.blue.shade500,
-              Colors.lightBlue.shade300,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-
-            // 🔥 ICON + ANIMATION
-            TweenAnimationBuilder<double>(
-              duration: const Duration(milliseconds: 800),
-              curve: Curves.easeOutBack,
-              tween: Tween(begin: 0, end: 1),
-              builder: (context, value, child) {
-                return Transform.scale(
-                  scale: value,
-                  child: child,
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.all(25),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.language_rounded,
-                  size: 110,
-                  color: Colors.white,
-                ),
+      body: Stack(
+        children: [
+          // ---------------- FOND GRADIENT ----------------
+          Container(
+            padding: const EdgeInsets.all(25),
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.blue.shade800,
+                  Colors.blue.shade500,
+                  Colors.lightBlue.shade300,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
-
-            const SizedBox(height: 35),
-
-            // ⭐ TITRE PRINCIPAL
-            const Text(
-              "Bienvenue sur KmerLingo",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                height: 1.3,
-                letterSpacing: 1,
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            // 📘 SOUS-TEXTE / SLOGAN
-            const Text(
-              "Améliore ton niveau en langues avec plaisir.\n"
-              "Progresse chaque jour, débloque des niveaux\n"
-              "et deviens un vrai champion du langage !",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 17,
-                color: Colors.white70,
-                height: 1.5,
-              ),
-            ),
-
-            const SizedBox(height: 40),
-
-            // 🔥 BOUTON START (optionnel)
-            TweenAnimationBuilder<double>(
-              duration: const Duration(milliseconds: 900),
-              curve: Curves.easeOut,
-              tween: Tween(begin: 0, end: 1),
-              builder: (context, value, child) {
-                return Opacity(
-                  opacity: value,
-                  child: child,
-                );
-              },
-              child: GestureDetector(
-                onTap: () {
-                  // → Navigation si tu veux
-                  // Navigator.push(context, MaterialPageRoute(builder: (_) => NextScreen()));
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 15,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // 🔥 ICON + ANIMATION
+                TweenAnimationBuilder<double>(
+                  duration: const Duration(milliseconds: 800),
+                  curve: Curves.easeOutBack,
+                  tween: Tween(begin: 0, end: 1),
+                  builder: (context, value, child) => Transform.scale(
+                    scale: value,
+                    child: child,
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      )
-                    ],
-                  ),
-                  child: Text(
-                    "Commencer",
-                    style: TextStyle(
-                      color: Colors.blue.shade700,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.8,
+                  child: Container(
+                    padding: const EdgeInsets.all(25),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.language_rounded,
+                      size: 110,
+                      color: Colors.white,
                     ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 35),
+                const Text(
+                  "Bienvenue sur KmerLingo",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    height: 1.3,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 15),
+                const Text(
+                  "Progresse chaque jour, débloque des niveaux\n"
+                  "et deviens un vrai champion du langage !",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 17,
+                    color: Colors.white70,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 40),
+                TweenAnimationBuilder<double>(
+                  duration: const Duration(milliseconds: 900),
+                  curve: Curves.easeOut,
+                  tween: Tween(begin: 0, end: 1),
+                  builder: (context, value, child) => Opacity(
+                    opacity: value,
+                    child: child,
+                  ),
+                  child: GestureDetector(
+                    onTap: () {
+                      // Navigation vers l'écran principal
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                      ),
+                      child: Text(
+                        "Commencer",
+                        style: TextStyle(
+                          color: Colors.blue.shade700,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+
+          // ---------------- STREAK EN HAUT À DROITE ----------------
+          Positioned(
+            top: 50,
+            right: 25,
+            child: isLoading
+                ? const CircularProgressIndicator(color: Colors.white)
+                : Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.local_fire_department,
+                            color: Colors.orangeAccent, size: 28),
+                        const SizedBox(width: 6),
+                        Text(
+                          '$currentStreak',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -246,8 +305,7 @@ class HomeScreen extends StatelessWidget {
 // ---------------- STATISTICS ----------------
 class StatisticsScreen extends StatefulWidget {
   final String userId;
-
-  const StatisticsScreen({super.key, required this.userId});
+  const StatisticsScreen({Key? key, required this.userId}) : super(key: key);
 
   @override
   State<StatisticsScreen> createState() => _StatisticsScreenState();
@@ -264,13 +322,11 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     super.initState();
     statsFuture = api.fetchUserStats(widget.userId);
 
-    // ✅ AnimationController correctement initialisé
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
 
-    // Lance l’animation après la frame initiale
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _animationController.forward();
     });
@@ -375,7 +431,6 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     );
   }
 
-  /// Carte statistique avec animation FadeTransition
   Widget _buildStatCard({
     required String title,
     required String value,
@@ -414,10 +469,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     );
   }
 
-  /// Statistiques par langue
   List<Widget> _buildLanguageStats(Map<String, dynamic> languages) {
     List<Widget> widgets = [];
-    int i = 6; // Commence après les cartes principales
+    int i = 6;
     languages.forEach((lang, data) {
       widgets.add(
         _buildStatCard(
@@ -433,7 +487,6 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     return widgets;
   }
 
-  /// Widget de chargement
   Widget _buildLoading() {
     return Center(
       child: Column(

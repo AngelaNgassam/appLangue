@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
+  // final String baseUrl = "http://192.168.1.212:3000"; // Backend NestJS    
   final String baseUrl = "http://10.166.4.172:3000"; // Backend NestJS
   // final String baseUrl = "http://localhost:3000"; // Backend NestJS
 
@@ -18,6 +19,211 @@ class ApiService {
     print('💎 Token récupéré: $token');
     return token;
   }
+/*************  ✨ Windsurf Command ⭐  *************/
+/*******  ca9d1f9c-a91b-4b63-a54d-bf77bf0ee462  *******/
+  Future<Map<String, dynamic>> followUser(String userId) async {
+    try {
+      final token = await _getToken();
+      final response = await http.post(
+        Uri.parse('$baseUrl/follow/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('✅ Follow User Response: ${response.statusCode}');
+      print('📦 Body: ${response.body}');
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Erreur lors du suivi: ${response.body}');
+      }
+    } catch (e) {
+      print('❌ Erreur followUser: $e');
+      throw Exception('Impossible de suivre cet utilisateur');
+    }
+  }
+  /// 👥 Ne plus suivre un utilisateur
+  Future<Map<String, dynamic>> unfollowUser(String userId) async {
+    try {
+      final token = await _getToken();
+      final response = await http.delete(
+        Uri.parse('$baseUrl/follow/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('✅ Unfollow User Response: ${response.statusCode}');
+      print('📦 Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Erreur lors du unfollow: ${response.body}');
+      }
+    } catch (e) {
+      print('❌ Erreur unfollowUser: $e');
+      throw Exception('Impossible de ne plus suivre cet utilisateur');
+    }
+  }
+
+  /// 📋 Récupérer tous les utilisateurs (avec pagination)
+  Future<Map<String, dynamic>> getAllUsers({int page = 1, int limit = 20}) async {
+    try {
+      final token = await _getToken();
+      final response = await http.get(
+        Uri.parse('$baseUrl/follow/users/all?page=$page&limit=$limit'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('✅ Get All Users Response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Erreur lors de la récupération des utilisateurs');
+      }
+    } catch (e) {
+      print('❌ Erreur getAllUsers: $e');
+      throw Exception('Impossible de récupérer la liste des utilisateurs');
+    }
+  }
+
+  /// 🔍 Rechercher des utilisateurs par email, prénom ou nom
+  Future<List<dynamic>> searchUsers(String query) async {
+    try {
+      final token = await _getToken();
+      final response = await http.get(
+        Uri.parse('$baseUrl/follow/users/search?q=$query'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('✅ Search Users Response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Erreur lors de la recherche');
+      }
+    } catch (e) {
+      print('❌ Erreur searchUsers: $e');
+      throw Exception('Impossible de rechercher des utilisateurs');
+    }
+  }
+
+  /// 👤 Récupérer mes followers (qui me suit)
+  Future<List<dynamic>> getMyFollowers() async {
+    try {
+      final token = await _getToken();
+      final response = await http.get(
+        Uri.parse('$baseUrl/follow/followers'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('✅ Get My Followers Response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Erreur lors de la récupération des followers');
+      }
+    } catch (e) {
+      print('❌ Erreur getMyFollowers: $e');
+      throw Exception('Impossible de récupérer vos followers');
+    }
+  }
+
+  /// 👤 Récupérer mes abonnements (que je suis)
+  Future<List<dynamic>> getMyFollowing() async {
+    try {
+      final token = await _getToken();
+      final response = await http.get(
+        Uri.parse('$baseUrl/follow/following'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('✅ Get My Following Response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Erreur lors de la récupération des abonnements');
+      }
+    } catch (e) {
+      print('❌ Erreur getMyFollowing: $e');
+      throw Exception('Impossible de récupérer vos abonnements');
+    }
+  }
+
+  /// 👤 Récupérer les followers d'un utilisateur spécifique
+  Future<List<dynamic>> getUserFollowers(String userId) async {
+    try {
+      final token = await _getToken();
+      final response = await http.get(
+        Uri.parse('$baseUrl/follow/$userId/followers'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('✅ Get User Followers Response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Erreur lors de la récupération des followers');
+      }
+    } catch (e) {
+      print('❌ Erreur getUserFollowers: $e');
+      throw Exception('Impossible de récupérer les followers');
+    }
+  }
+
+  /// 👤 Récupérer les abonnements d'un utilisateur spécifique
+  Future<List<dynamic>> getUserFollowing(String userId) async {
+    try {
+      final token = await _getToken();
+      final response = await http.get(
+        Uri.parse('$baseUrl/follow/$userId/following'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('✅ Get User Following Response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Erreur lors de la récupération des abonnements');
+      }
+    } catch (e) {
+      print('❌ Erreur getUserFollowing: $e');
+      throw Exception('Impossible de récupérer les abonnements');
+    }
+  }
+
+  // ============================================
+  // 📊 STREAK (si tu en as besoin)
+  // ============================================
 
   /// 🔹 Récupère la langue de l'utilisateur stockée localement
   Future<String?> _getUserLanguage() async {
@@ -26,6 +232,41 @@ class ApiService {
     print('🌐 Langue récupérée: $lang');
     return lang;
   }
+    /// 🔹 Récupère le currentStreak et maxStreak de l'utilisateur
+  Future<Map<String, dynamic>> getUserStreak(String userId) async {
+    final token = await _getToken();
+    if (token == null) {
+      throw Exception("JWT token introuvable");
+    }
+
+    final url = Uri.parse('$baseUrl/question/streak/me');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('🔥 Streak récupéré: $data');
+        return {
+          'currentStreak': data['current'] ?? 0,
+          'maxStreak': data['max'] ?? 0,
+          'lastActivityAt': data['lastActivityAt'] ?? null,
+        };
+      } else {
+        throw Exception('Erreur ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      print('❌ Erreur lors de la récupération du streak: $e');
+      rethrow;
+    }
+  }
+
 
   /// 🔹 Met à jour la langue de l'utilisateur
   Future<void> setUserLanguage(String langCode) async {
@@ -92,13 +333,12 @@ class ApiService {
   }
 
   /// 🔹 Vérifier la réponse de l'utilisateur
- Future<Map<String, dynamic>> checkAnswer(String questionId, String userAnswer) async {
+Future<Map<String, dynamic>> checkAnswer(String questionId, String userAnswer) async {
   final url = Uri.parse('$baseUrl/question/$questionId/check');
 
-  // Debug : affichage de la requête
   print('🔍 Vérification de la réponse pour la question $questionId avec la réponse: "$userAnswer"');
 
-  final headers = await _getHeaders(); // ton service pour récupérer les headers
+  final headers = await _getHeaders();
 
   try {
     final response = await http.post(
@@ -110,21 +350,27 @@ class ApiService {
       body: json.encode({"answer": userAnswer}),
     );
 
-    // Accepter 200 et 201 comme succès
     if (response.statusCode == 200 || response.statusCode == 201) {
       final Map<String, dynamic> data = json.decode(response.body);
 
-      // Debug : affichage de la réponse du backend
       print('✅ Résultat du backend: $data');
 
-      // S'assurer que correctAnswers est toujours une liste de strings
+      // ---------------- CORRECT ANSWERS ----------------
       if (data['correctAnswers'] != null && data['correctAnswers'] is List) {
-        data['correctAnswers'] = List<String>.from(data['correctAnswers'].map((e) => e.toString()));
+        data['correctAnswers'] =
+            List<String>.from(data['correctAnswers'].map((e) => e.toString()));
       } else {
         data['correctAnswers'] = [];
       }
 
+      // ---------------- SAFE VALUES ----------------
       data['isCorrect'] = data['isCorrect'] ?? false;
+      data['pointsAdded'] = data['pointsAdded'] ?? 0;
+      data['totalLessonPoints'] = data['totalLessonPoints'] ?? 0;
+
+      // ---------------- streak retourné par backend ----------------
+      data['currentStreak'] = data['currentStreak'] ?? 0;
+      data['maxStreak'] = data['maxStreak'] ?? 0;
 
       return data;
     } else {

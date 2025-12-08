@@ -804,7 +804,7 @@ Future<void> _playSound(bool isCorrect) async {
           children: [
             Icon(Icons.auto_stories, color: Colors.orange, size: 28),
             SizedBox(width: 10),
-            Text("Révision Suggérée"),
+            Text("Révision"),
           ],
         ),
         content: Text(

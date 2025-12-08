@@ -4,7 +4,11 @@ class UserModel {
   final String lastName;
   final String email;
   final String phone;
-  final String role; // 👈 ajouté
+  final String role;
+
+  final int currentStreak;      // 🔥 nouveau
+  final int maxStreak;          // 🔥 nouveau
+  final DateTime? lastActivityAt; // 🔥 nouveau
 
   UserModel({
     required this.id,
@@ -13,6 +17,9 @@ class UserModel {
     required this.email,
     required this.phone,
     required this.role,
+    required this.currentStreak,
+    required this.maxStreak,
+    required this.lastActivityAt,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -22,7 +29,13 @@ class UserModel {
       lastName: json['lastName'],
       email: json['email'],
       phone: json['phone'],
-      role: json['Role'] ?? 'USER', // 👈 valeur par défaut
+      role: json['role'] ?? 'USER', // 👈 correction, c’est "role" en minuscule
+
+      currentStreak: json['currentStreak'] ?? 0,
+      maxStreak: json['maxStreak'] ?? 0,
+      lastActivityAt: json['lastActivityAt'] != null
+          ? DateTime.parse(json['lastActivityAt'])
+          : null,
     );
   }
 }
